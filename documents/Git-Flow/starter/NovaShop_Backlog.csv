@@ -1,0 +1,13 @@
+issue_id,type,title,requirement_ref,acceptance_oracle,status,target_release,scenario_use
+NS-101,feature,Tìm kiếm và lọc sản phẩm,FR-01,"Kết quả phản ánh từ khóa; bộ lọc đang chọn hiển thị; empty state quan sát được",ready,0.1.0,U02 material
+NS-102,feature,Giỏ hàng và mã khuyến mãi,FR-02,"Tổng tiền cập nhật; mã không hợp lệ có thông báo; không mất sản phẩm đã chọn",ready,0.1.0,U02 lab
+NS-103,feature,Guest checkout,FR-03,"Đơn hợp lệ có mã; lỗi validation giữ input; không chứa dữ liệu thật",ready,0.1.0,U03 lab
+NS-104,feature,Theo dõi trạng thái đơn,FR-04,"Chỉ thấy đơn của tài khoản mô phỏng; trạng thái có timestamp synthetic",refined,0.1.0,U04 lab
+NS-105,feature,Quản trị sản phẩm và đơn,FR-05,"Thay đổi tồn kho/trạng thái có audit record và owner",refined,0.1.0,U04 lab
+NS-202,change,Hiển thị failure của payment sandbox,FR-03,"Failure code giả được ánh xạ tới thông báo; input checkout được giữ",ready,0.1.0,U02 assignment
+NS-303,change,Chuẩn hóa audit field dùng chung Checkout và Admin,FR-03|FR-05,"Cả hai acceptance contract còn nguyên; schema artifact chỉ có một định nghĩa audit field",ready,0.1.0,U03 assignment
+RC-401,release_fix,Sửa wording Order Tracking trong UAT,FR-04,"Wording theo glossary; không thêm capability mới; UAT finding được đóng",selected,0.1.0,U04 assignment
+HOTFIX-301,incident,Sai phí vận chuyển ở production baseline,FR-03,"Bảng phí synthetic đúng rule; regression Cart/Checkout đạt; fix có trong dòng tương lai",urgent,0.1.1,U05 lab
+INC-501,incident,Duplicate payment request trên sandbox,FR-03,"Request lặp không tạo hai order artifact; regression evidence có correlation ID giả",urgent,0.1.1,U05 assignment
+CAP-601,feature,Bulk update trạng thái đơn cho Admin,FR-05,"Mỗi thay đổi có audit evidence; item lỗi không làm mất kết quả hợp lệ",refined,0.2.0,Capstone
+CAP-602,incident,Order Tracking hiển thị trạng thái lùi,FR-04,"Timeline giữ thứ tự hợp lệ; patch được truyền về dòng phát triển",queued,0.2.1,Capstone

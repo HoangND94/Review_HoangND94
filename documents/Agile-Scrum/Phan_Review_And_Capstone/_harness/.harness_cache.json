@@ -1,0 +1,16 @@
+{
+  "judged": {
+    "CNC-P0-107::Review_REV-01.md": {
+      "file_hash": "ea71a0677b312876",
+      "rule_hash": "288e0e2b5038d839",
+      "pass": true,
+      "ts": "2026-08-25T02:45:03+00:00"
+    },
+    "CNC-P0-108::Capstone_CAP-01.md": {
+      "file_hash": "1ae6c3fa97391b5f",
+      "rule_hash": "0f1d9c15426d71b0",
+      "pass": true,
+      "ts": "2026-08-25T02:45:03+00:00"
+    }
+  }
+}

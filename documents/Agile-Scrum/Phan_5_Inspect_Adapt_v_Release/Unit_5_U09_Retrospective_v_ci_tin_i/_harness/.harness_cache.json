@@ -1,0 +1,22 @@
+{
+  "judged": {
+    "CNC-P0-102::material.md": {
+      "file_hash": "8f2f84c62adacfca",
+      "rule_hash": "c2463cb951611da3",
+      "pass": true,
+      "ts": "2026-08-25T02:51:34+00:00"
+    },
+    "CNC-P0-103::example.md": {
+      "file_hash": "97650570029e9bb9",
+      "rule_hash": "446c22d315634d3f",
+      "pass": true,
+      "ts": "2026-08-25T02:51:34+00:00"
+    },
+    "CNC-P0-104::HandsOnLab_09.md": {
+      "file_hash": "91d0468782148b77",
+      "rule_hash": "efeab66df7a2520d",
+      "pass": true,
+      "ts": "2026-08-25T02:51:34+00:00"
+    }
+  }
+}
