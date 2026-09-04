@@ -95,7 +95,7 @@ Declaration `int32_t values[MAX_VALUES]` cấp storage cho tám phần tử. Ch�
 
 Dùng array fixed khi element đồng nhất và upper bound nhỏ/rõ. Không dùng khi dữ liệu unbounded hoặc cần grow; dynamic array phù hợp hơn nhưng thêm ownership/allocation. Fixed capacity đơn giản, đổi lại phải reject phần vượt giới hạn.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Chạy `./b02_array_flow_demo --analyze max 12 7 25 9`; prefix có `count=4`. Dòng đầu phải đúng `count=4 accepted=4 rejected=0`; exit `0`.
 
@@ -127,7 +127,7 @@ C lưu row-major: `a[r][c]` tương đương `*(*(a+r)+c)` và offset phần t�
 
 Dùng khi cả shape và row-major access rõ. Với shape runtime/ảnh lớn, dùng flat buffer + dimensions/stride; trade-off là index verbose nhưng API không khóa column compile-time.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Input matrix `2x3` trong self-test có tổng `21` và row count `2`. `./b02_array_flow_demo --self-test` phải in `B02 SELF-TEST PASS checks=8`; đổi `6` thành `7` làm check matrix-sum fail và stderr `B02 SELF-TEST FAIL ...`.
 
@@ -159,7 +159,7 @@ Hiểu layout để viết loop tuyến tính và tính index; không suy địa
 
 Dùng pointer/index traversal khi bounds đã chứng minh. Không dùng arithmetic để đi qua hai object rời; không dereference `a+count`. Index dễ review, pointer walk đôi khi gọn nhưng precondition khó nhìn hơn.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Với `int a[3]={10,20,30};`, biểu thức `printf("%td\n", &a[2]-&a[0]);` phải in `2`. Đây là khoảng cách hai element; không phụ thuộc `sizeof(int)`.
 
@@ -191,7 +191,7 @@ Chọn named constant `MAX_VALUES=8`, tránh magic bound rải rác. Phân biệ
 
 Suy bound tốt cho lookup table literal; explicit capacity tốt cho buffer. Không dựa VLA nếu target có `__STDC_NO_VLA__` hoặc stack budget không rõ.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Snippet `int a[] = {4,5,6,7}; printf("%zu\n", sizeof a/sizeof a[0]);` phải in `4`. Trong asset, input thứ chín bị từ chối trước ghi ngoài buffer.
 
@@ -223,7 +223,7 @@ Loop parse duy trì invariant: trước iteration `i`, `values[0..i)` hợp lệ
 
 Dùng một pass khi operation associative/streamable. Tách validate và analyze giúp contract rõ nhưng đi qua data hai lần; ở capacity 8, clarity quan trọng hơn micro-optimization.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Input `12 7 25 9`, mode `max`; exact stdout thứ hai là `mode=MAX result=25 band=HIGH`. Nếu loop bắt đầu `i=0` với result `values[0]` vẫn đúng nhưng lặp thừa; asset bắt đầu `1`.
 
@@ -255,7 +255,7 @@ CLI tính `count=argc-3`; guard `1..MAX_VALUES` chạy trước populate. Capaci
 
 Dùng cho lookup/bounded batch. Không dùng fixed stack array khổng lồ hoặc dữ liệu không có upper bound. Trade-off: deterministic memory vs giới hạn cứng/rejection.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Gọi mode với chín values: `./b02_array_flow_demo --analyze sum 1 2 3 4 5 6 7 8 9`; stderr phải `error: expected 1..8 values, got 9`, stdout rỗng, exit `2`.
 
@@ -265,7 +265,7 @@ Gọi mode với chín values: `./b02_array_flow_demo --analyze sum 1 2 3 4 5 6 
 
 ##### Failure/troubleshooting
 
-**Dấu hiệu:** result thiếu sample không báo lỗi → **nguyên nhân:** truncation ngầm → **chẩn đoán:** so count input/accepted → **sửa:** reject hoặc report dropped count theo spec → **phòng tránh:** exact capacity+1 oracle.
+**Dấu hiệu:** result thiếu sample không báo lỗi → **nguyên nhân:** truncation ngầm → **chẩn đoán:** so count input/accepted → **sửa:** reject hoặc report dropped count theo spec → **phòng tránh:** exact capacity+1 tiêu chí kiểm chứng.
 
 ### OUT-B02-08 2 Decision in C
 
@@ -291,7 +291,7 @@ Mỗi guard giảm state space: invalid mode dừng trước array; invalid coun
 
 Dùng guard clauses khi failure độc lập và giúp happy path phẳng. Không phân nhánh theo condition lặp lại có thể mâu thuẫn; enum+switch hoặc table phù hợp hơn cho nhiều mode.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 `./b02_array_flow_demo --analyze median 1 2` phải stderr `error: mode must be sum, max, or first-positive`, stdout rỗng, exit `2`.
 
@@ -323,7 +323,7 @@ Guard phải kiểm pointer trước dereference và range trước cast/index. 
 
 Dùng short-circuit để bảo vệ access phụ thuộc. Tách expression phức tạp thành named booleans/guards; thêm dòng code nhưng giảm lỗi precedence/side effect.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Với snippet `const char *p=NULL; puts((p!=NULL && *p!='\0') ? "data" : "blocked");`, exact output là `blocked` và không dereference null.
 
@@ -355,7 +355,7 @@ Chỉ một trong operand thứ hai/thứ ba của `?:` được evaluate. Với
 
 Dùng `?:` cho lựa chọn value ngắn, cùng ý nghĩa/type; dùng `if` khi có nhiều statement/error path. Nested ternary tiết kiệm dòng nhưng tăng ambiguity.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 Happy result `25` làm predicate true; output chính xác `mode=MAX result=25 band=HIGH`. Với `--analyze max 12 7`, output band phải `NORMAL`.
 
@@ -387,7 +387,7 @@ Mỗi case trong `analyze()` `return` sau khi hoàn tất, nên không fallthrou
 
 Dùng cho tập enum nhỏ. Function table phù hợp khi nhiều strategy/extensibility, nhưng thêm function pointers. Không switch trên string; parse string sang enum trước.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 `./b02_array_flow_demo --analyze sum 12 7 25 9` phải có dòng `mode=SUM result=53 band=HIGH`; cùng input mode max cho `25`, chứng minh case khác nhau.
 
@@ -423,7 +423,7 @@ Loop max: init result, `i=1`; test `i<count`; update result invariant; increment
 
 Không dùng recursion cho linear scan chỉ để “gọn”; loop có stack usage hằng. Chọn form diễn đạt termination rõ nhất.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 `for` duyệt `[12,7,25,9]` và trả `25`; exact output `mode=MAX result=25 band=HIGH`. Count `1` vẫn đúng vì body max không chạy.
 
@@ -455,7 +455,7 @@ Sau `break`, `i<count` chứng minh đã tìm thấy. Nếu loop kết thúc t�
 
 Dùng early exit cho search. Tránh nhiều break/continue khiến invariant phân mảnh; có thể tách helper. Với resource, cleanup path phải rõ.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 `./b02_array_flow_demo --analyze first-positive -2 0 7 11` phải in `mode=FIRST_POSITIVE result=7 band=NORMAL`. Input `-2 0` phải stderr `error: no value satisfies mode FIRST_POSITIVE`, exit `3`.
 
@@ -487,7 +487,7 @@ Invariant trước iteration `i`: `0<=i<=count` và `values[0..i)` hợp lệ. P
 
 Dùng two-phase parse/analyze khi cần all-or-nothing. Streaming có thể xử lý một pass nhưng cần policy rollback/partial result rõ.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
 `./b02_array_flow_demo --analyze max 12 bad 25` phải stderr `error: invalid integer at position 2: bad`, stdout rỗng, exit `2`; value `25` không được xử lý.
 
@@ -519,9 +519,9 @@ Asset dùng đủ ba loop form có vai trò riêng: `for` cho arrays, `while` ch
 
 Dùng form làm proof ngắn nhất; không ép mọi loop về một style. `goto cleanup` có thể hợp lý trong resource-heavy C, nhưng không cần và không được dạy như loop control thay thế tại đây.
 
-##### Ví dụ và exact oracle
+##### Ví dụ và tiêu chí kiểm chứng chính xác
 
-Self-test kiểm `decimal_digits(0)==1` và `decimal_digits(2026)==4`; exact aggregate oracle là `B02 SELF-TEST PASS checks=8`.
+Self-test kiểm `decimal_digits(0)==1` và `decimal_digits(2026)==4`; exact aggregate tiêu chí kiểm chứng là `B02 SELF-TEST PASS checks=8`.
 
 ##### Best practice
 

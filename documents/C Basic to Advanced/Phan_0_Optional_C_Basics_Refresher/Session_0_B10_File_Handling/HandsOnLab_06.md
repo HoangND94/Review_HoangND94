@@ -268,7 +268,7 @@ ASAN_OPTIONS=detect_leaks=1:halt_on_error=1 \
   2>lab06_scratch/evidence/asan.err
 ```
 
-Expected exit `0`, `asan.err` rỗng và stdout đúng happy oracle.
+Expected exit `0`, `asan.err` rỗng và stdout đúng tiêu chí kiểm chứng cho trường hợp hợp lệ.
 
 Chạy thêm sanitizer trên bad-checksum fixture, bắt riêng application status:
 
@@ -386,7 +386,7 @@ size lab06_scratch/build/record_tool_o0 \
   >lab06_scratch/evidence/size.txt
 ```
 
-Expected: cả hai process exit `0`; hai output khớp happy oracle; `output.diff` chứa chính xác `MATCH o0=o2`; hai MAP file không rỗng. Kích thước có thể tăng hoặc giảm tùy toolchain; chỉ ghi số đã đo.
+Expected: cả hai process exit `0`; hai output khớp tiêu chí kiểm chứng cho trường hợp hợp lệ; `output.diff` chứa chính xác `MATCH o0=o2`; hai MAP file không rỗng. Kích thước có thể tăng hoặc giảm tùy toolchain; chỉ ghi số đã đo.
 
 Profile là evidence bắt buộc của checkpoint này. Build riêng với `-pg`, chạy workload synthetic đã khóa, rồi tạo report từ đúng binary vừa chạy:
 
@@ -429,7 +429,7 @@ sha256sum \
 sha256sum -c lab06_scratch/evidence/binaries.sha256
 ```
 
-Expected: workload exit `0` và khớp happy oracle; `gmon.out` cùng `profile.txt` không rỗng; report có symbol ứng dụng `main`; sáu dòng hash đều được `sha256sum -c` xác nhận `OK`. Cột thời gian có thể bằng `0.00` nếu workload quá ngắn, vì vậy chỉ dùng report này để chứng minh quy trình profiling và phân bố quan sát được, không tuyên bố speedup.
+Expected: workload exit `0` và khớp tiêu chí kiểm chứng cho trường hợp hợp lệ; `gmon.out` cùng `profile.txt` không rỗng; report có symbol ứng dụng `main`; sáu dòng hash đều được `sha256sum -c` xác nhận `OK`. Cột thời gian có thể bằng `0.00` nếu workload quá ngắn, vì vậy chỉ dùng report này để chứng minh quy trình profiling và phân bố quan sát được, không tuyên bố speedup.
 
 `optimization_decision.md` phải ghi compiler/CPU/input, số lần chạy, metric, correctness check, observation và quyết định giữ/không giữ thay đổi. Không được kết luận “`-O2` luôn nhanh hơn” hoặc diễn giải số từ một lần chạy như guarantee.
 

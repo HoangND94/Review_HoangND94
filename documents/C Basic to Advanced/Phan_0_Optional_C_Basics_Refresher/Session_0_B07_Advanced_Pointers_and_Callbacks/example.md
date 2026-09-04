@@ -54,7 +54,7 @@ Trade-off: `void *context` cho phép nhiều policy dùng chung traversal nhưng
 - `OUT-B07-04`: `value_predicate` ngăn callback sai signature tại compile time.
 - `OUT-B07-05`: callback nhận context per-call; traversal và policy tách rời; output ownership commit atomically.
 
-### 5. Build và happy oracle
+### 5. Build và tiêu chí kiểm chứng cho trường hợp hợp lệ
 
 Từ thư mục Unit:
 
@@ -72,7 +72,7 @@ OK threshold=8 selected=2 sum=21 first=8
 
 Exit `0`, stderr rỗng. `8` và `13` được chọn theo đúng thứ tự input; `first=8` chứng minh callback không sort hoặc thay đổi dãy.
 
-### 6. Negative oracle
+### 6. tiêu chí kiểm chứng cho trường hợp lỗi
 
 ```sh
 set +e
@@ -86,7 +86,7 @@ test "$(cat /tmp/b07_bad.err)" = 'ERROR invalid integer list'
 
 Malformed token là expected rejection, không phải crash. Callback không được gọi với partial list.
 
-Whitespace có oracle riêng và phải bị reject nhất quán ở threshold lẫn list:
+Whitespace có tiêu chí kiểm chứng riêng và phải bị reject nhất quán ở threshold lẫn list:
 
 ```sh
 set +e
@@ -125,18 +125,18 @@ Expected vẫn là exact happy output và không có sanitizer diagnostic. Đây
 | selected đúng nhưng sum sai | overflow hoặc callback có side effect | log input/selected, chạy UBSan | checked-add; callback chỉ đọc context |
 | leak summary | caller bỏ quên ownership | ASan/Valgrind allocation stack | một cleanup path, free đúng một lần |
 | crash khi invalid token | dùng partial output | breakpoint tại parser/caller | parser commit count chỉ khi toàn input hợp lệ |
-| input có space vẫn được nhận | dựa trực tiếp vào whitespace-tolerant `strtol` | chạy exact whitespace-negative oracle | pre-check cả threshold/list bằng `isspace((unsigned char)c)` |
+| input có space vẫn được nhận | dựa trực tiếp vào whitespace-tolerant `strtol` | chạy exact whitespace-tiêu chí kiểm chứng cho trường hợp lỗi | pre-check cả threshold/list bằng `isspace((unsigned char)c)` |
 
 ## Practice Time — độc lập, không chấm điểm
 
 Không sửa asset gốc. Copy vào workspace riêng và bổ sung một predicate mới “nằm trong inclusive range” dùng context `{minimum, maximum}`; traversal không được biết policy cụ thể.
 
 - Input mới: range `[10,20]`, list `1,10,12,21,20`.
-- Oracle: exit `0`, stderr rỗng, stdout chính xác `OK range=10..20 selected=3 sum=42 first=10`.
+- tiêu chí kiểm chứng: exit `0`, stderr rỗng, stdout chính xác `OK range=10..20 selected=3 sum=42 first=10`.
 - Negative: range `20..10` phải exit `2`, stdout rỗng, stderr `ERROR invalid range`.
 - Evidence: source diff, strict-build log, happy/negative stdout-stderr-exit record và sanitizer summary.
 
-Phần này chỉ nêu contract/oracle, không cung cấp implementation hay chuỗi bước giải. Hoàn thành Practice Time không tạo điểm và không thay thế bất kỳ Assignment nào.
+Phần này chỉ nêu contract/tiêu chí kiểm chứng, không cung cấp implementation hay chuỗi bước giải. Hoàn thành Practice Time không tạo điểm và không thay thế bất kỳ Assignment nào.
 
 ## Bài học chuyển giao
 

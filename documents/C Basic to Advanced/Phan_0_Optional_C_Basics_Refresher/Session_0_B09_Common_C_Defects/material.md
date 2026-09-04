@@ -5,7 +5,7 @@
 
 ## 🎯 Learning Outcomes
 
-- Nhận diện defect trước khi nó thành memory corruption hoặc sai dữ liệu; chuyển mỗi nhận định thành oracle tái lập.
+- Nhận diện defect trước khi nó thành memory corruption hoặc sai dữ liệu; chuyển mỗi nhận định thành tiêu chí kiểm chứng tái lập.
 - **Increment `M00-FND-09`:** [b09_defects_demo.c](assets/b09_defects_demo.c) dùng checked paths cho parsing, byte decoding, macro, arithmetic, const, string và cleanup.
 
 ## 1. Kiến thức tiên quyết và mental map
@@ -38,7 +38,7 @@
 
 **Khi dùng/không dùng/trade-off.** Dùng byte-wise decode cho file/network portable; dùng layout-native khi chỉ serializing trong cùng ABI và contract cho phép. Byte decode dài hơn nhưng rõ endian/alignment; packed access có thể chậm, fault hoặc lệ thuộc compiler.
 
-**Ví dụ/oracle.** Bytes `{0x34,0x12}` phải tạo decimal `4660`; asset với `4 sensor-A` in `word=4660`. Oracle: stdout exact `OK count=4 sum=100 label=sensor-A word=4660 mask=3`, exit `0`.
+**Ví dụ/tiêu chí kiểm chứng.** Bytes `{0x34,0x12}` phải tạo decimal `4660`; asset với `4 sensor-A` in `word=4660`. tiêu chí kiểm chứng: stdout exact `OK count=4 sum=100 label=sensor-A word=4660 mask=3`, exit `0`.
 
 **Best practice.** **Rule:** parse external representation field-by-field. **Rationale:** tách format khỏi padding/endian/alignment ABI. **Positive:** `bytes[0] | bytes[1] << 8`. **Negative:** `*(const uint16_t *)(buffer + 1)`, có thể lệch alignment, alias sai và đảo endian.
 
@@ -56,7 +56,7 @@
 
 **Khi dùng/không dùng/trade-off.** Macro constants/count trong scope phù hợp có zero runtime cost; không đưa expression có side effect vào macro không bảo đảm single evaluation. Inline function có rules linkage nhưng an toàn type/evaluation hơn.
 
-**Ví dụ/oracle.** `static const unsigned char encoded_word[]` có `ARRAY_COUNT(encoded_word)==2`; contract fail nếu khác. Oracle happy giữ `word=4660`; không dùng count macro sau khi truyền array vào function.
+**Ví dụ/tiêu chí kiểm chứng.** `static const unsigned char encoded_word[]` có `ARRAY_COUNT(encoded_word)==2`; contract fail nếu khác. tiêu chí kiểm chứng happy giữ `word=4660`; không dùng count macro sau khi truyền array vào function.
 
 **Best practice.** **Rule:** parenthesize parameters/result và document evaluation; ưu tiên inline function cho behavior. **Rationale:** preprocessor không hiểu type/side effect. **Positive:** `#define ARRAY_COUNT(a) (sizeof(a) / sizeof((a)[0]))` dùng ngay với local array. **Negative:** `#define TWICE(x) ((x)+(x))` rồi `TWICE(i++)`.
 
@@ -74,7 +74,7 @@
 
 **Khi dùng/không dùng/trade-off.** Modulo phù hợp checksum/hash đã công bố; checked arithmetic phù hợp sizes/totals. Check thêm branch nhưng ngăn memory corruption và ambiguity.
 
-**Ví dụ/oracle.** Asset tạo `10,20,30,40`; checked sum cho `100`. Executable path `--overflow-test` gọi chính `checked_add_u32(UINT32_MAX,1,&sentinel)`: phải exit `0`, stderr rỗng và in chính xác `OK overflow-rejected left=4294967295 right=1 output-unchanged=123`. Oracle đồng thời chứng minh helper trả failure **trước** phép cộng và không sửa output khi reject.
+**Ví dụ/tiêu chí kiểm chứng.** Asset tạo `10,20,30,40`; checked sum cho `100`. Executable path `--overflow-test` gọi chính `checked_add_u32(UINT32_MAX,1,&sentinel)`: phải exit `0`, stderr rỗng và in chính xác `OK overflow-rejected left=4294967295 right=1 output-unchanged=123`. tiêu chí kiểm chứng đồng thời chứng minh helper trả failure **trước** phép cộng và không sửa output khi reject.
 
 **Best practice.** **Rule:** validate trước operation trong đúng integer domain. **Rationale:** sau signed UB không còn recovery đáng tin; sau unsigned wrap có thể mất evidence. **Positive:** `UINT32_MAX-left < right`. **Negative:** `sum=left+right; if(sum<left)` được dùng bừa cho signed type.
 
@@ -92,7 +92,7 @@
 
 **Khi dùng/không dùng/trade-off.** Dùng const cho read-only views/config; không dùng nó thay synchronization hoặc ownership model. Const-correct API có thể cần chỉnh nhiều signatures nhưng giảm mutation surface.
 
-**Ví dụ/oracle.** Loop sum chỉ đọc `values` qua `read_only_view`; input `4` cho `sum=100` và pointer được giải phóng bằng owner `values` sau use.
+**Ví dụ/tiêu chí kiểm chứng.** Loop sum chỉ đọc `values` qua `read_only_view`; input `4` cho `sum=100` và pointer được giải phóng bằng owner `values` sau use.
 
 **Best practice.** **Rule:** thêm const ở API boundary sớm và giữ owner riêng. **Rationale:** compiler thực thi một phần mutation contract. **Positive:** `size_t f(const uint8_t *data)`. **Negative:** cast `(uint8_t *)data` rồi ghi vì signature bất tiện.
 
@@ -110,7 +110,7 @@
 
 **Khi dùng/không dùng/trade-off.** `size_t` cho array count/index; fixed-width types cho wire data; signed cho miền thật sự chứa số âm. Conversion explicit tăng verbosity nhưng lộ boundary decision.
 
-**Ví dụ/oracle.** Input `9 sensor-A` vượt `MAX_VALUES=8`, phải exit `2`, stdout rỗng, stderr exact `ERROR count must be 1..8`; không được wrap/truncate rồi cấp phát.
+**Ví dụ/tiêu chí kiểm chứng.** Input `9 sensor-A` vượt `MAX_VALUES=8`, phải exit `2`, stdout rỗng, stderr exact `ERROR count must be 1..8`; không được wrap/truncate rồi cấp phát.
 
 **Best practice.** **Rule:** tránh mixed-sign comparisons và kiểm trước cast. **Rationale:** conversion diễn ra trước comparison. **Positive:** parse, range-check `1..8`, sau đó `(size_t)parsed`. **Negative:** `if (atoi(s) < sizeof(array))` nhận `-1` ngoài ý muốn.
 
@@ -128,7 +128,7 @@
 
 **Khi dùng/không dùng/trade-off.** C string phù hợp CLI text nhỏ; pointer+length phù hợp untrusted/binary buffers. Bounded copy có policy rõ nhưng truncation im lặng không được dùng nếu label là identifier.
 
-**Ví dụ/oracle.** `sensor-A` hợp lệ. `bad_label` chứa `_`, phải exit `2`, stdout rỗng và stderr exact `ERROR label must be 1..15 alnum-or-dash characters`.
+**Ví dụ/tiêu chí kiểm chứng.** `sensor-A` hợp lệ. `bad_label` chứa `_`, phải exit `2`, stdout rỗng và stderr exact `ERROR label must be 1..15 alnum-or-dash characters`.
 
 **Best practice.** **Rule:** validate capacity và termination trước use; cast `unsigned char` cho `<ctype.h>`. **Rationale:** over-read và negative-char argument có thể là UB. **Positive:** reject oversize, copy đủ `length+1`. **Negative:** `strcpy(dst, argv[2])` hoặc `isalnum((char)0xFF)`.
 
@@ -146,7 +146,7 @@
 
 **Khi dùng/không dùng/trade-off.** Parenthesize khi trộn operator families; không thêm parentheses vô nghĩa che expression quá phức tạp—tách biến named intermediate tốt hơn.
 
-**Ví dụ/oracle.** Với `flags=3`, đúng check không đi error path; stdout happy kết thúc `mask=3`. Biểu thức sai `flags & 1U == 0U` thực chất kiểm `flags & 0U`, luôn false.
+**Ví dụ/tiêu chí kiểm chứng.** Với `flags=3`, đúng check không đi error path; stdout happy kết thúc `mask=3`. Biểu thức sai `flags & 1U == 0U` thực chất kiểm `flags & 0U`, luôn false.
 
 **Best practice.** **Rule:** parenthesize operands của bitwise comparison và tách side effects. **Rationale:** giảm review ambiguity và macro expansion surprise. **Positive:** `(flags & MASK) != 0U`. **Negative:** `a & b == 0` hoặc `array[i++] = i`.
 
@@ -164,7 +164,7 @@
 
 **Khi dùng/không dùng/trade-off.** Heap dùng khi size/runtime lifetime cần; local fixed array phù hợp maximum nhỏ và stack budget cho phép. Heap hỗ trợ dynamic size nhưng thêm failure path, fragmentation và ownership burden.
 
-**Ví dụ/oracle.** `valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=99 ./b09_demo 4 sensor-A` phải exit `0` và báo `ERROR SUMMARY: 0 errors`; negative input trước allocation exit `2`.
+**Ví dụ/tiêu chí kiểm chứng.** `valgrind --leak-check=full --errors-for-leak-kinds=all --error-exitcode=99 ./b09_demo 4 sensor-A` phải exit `0` và báo `ERROR SUMMARY: 0 errors`; negative input trước allocation exit `2`.
 
 **Best practice.** **Rule:** chỉ định owner và viết cleanup đồng thời với allocation. **Rationale:** từng return mới là một leak opportunity. **Positive:** initialize NULL, one cleanup, `free` once. **Negative:** overwrite `values=malloc(...)` lần hai hoặc return giữa path mà không free.
 
@@ -172,7 +172,7 @@
 
 ## 3. Ví dụ tích hợp
 
-Asset nối cả tám defect class thành một boundary pipeline: parse `count`, kiểm label, kiểm allocation size, allocate, tạo values, đọc bằng const view, checked-sum, decode byte word, kiểm parenthesized mask và cleanup. Hai oracle tối thiểu:
+Asset nối cả tám defect class thành một boundary pipeline: parse `count`, kiểm label, kiểm allocation size, allocate, tạo values, đọc bằng const view, checked-sum, decode byte word, kiểm parenthesized mask và cleanup. Hai tiêu chí kiểm chứng tối thiểu:
 
 ```text
 $ ./b09_demo 4 sensor-A
@@ -221,7 +221,7 @@ Material này dùng safe checked paths để học chẩn đoán; nó không c�
 - **Precedence/associativity:** grouping cú pháp; không đồng nghĩa thứ tự evaluation tổng quát.
 - **Owner/borrow:** quy ước ai giải phóng object / ai chỉ dùng trong lifetime cho phép.
 - **Leak/dangling pointer:** allocation mất owner / pointer còn trỏ tới lifetime đã kết thúc.
-- **Oracle:** kết quả pass/fail chính xác gồm value, exit code và output channels.
+- **tiêu chí kiểm chứng:** kết quả pass/fail chính xác gồm value, exit code và output channels.
 
 ## 7. Nguồn tham khảo và provenance phần bổ sung
 

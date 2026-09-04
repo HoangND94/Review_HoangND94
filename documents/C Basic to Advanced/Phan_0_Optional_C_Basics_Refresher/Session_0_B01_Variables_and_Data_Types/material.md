@@ -10,7 +10,7 @@
 
 ## 🧭 Ngữ cảnh nghề nghiệp/dự án và phần tăng trưởng của Unit
 
-**MDB Edge Diagnostics Gateway — Simulated:** học viên đóng vai C systems developer, bổ sung data model cho record telemetry local. Unit tạo milestone **M00-FND-01**: một executable C17 portable có oracle xác định tại `assets/b01_variables_demo.c`. Artifact nhận `id`, loại phép đo và giá trị dạng text; nó phải tạo record đúng kiểu hoặc từ chối input trước khi conversion làm mất dữ liệu. Kết quả được B02 dùng như nền tảng để xử lý nhiều record.
+**MDB Edge Diagnostics Gateway — Simulated:** học viên đóng vai C systems developer, bổ sung data model cho record telemetry local. Unit tạo milestone **M00-FND-01**: một executable C17 portable có tiêu chí kiểm chứng xác định tại `assets/b01_variables_demo.c`. Artifact nhận `id`, loại phép đo và giá trị dạng text; nó phải tạo record đúng kiểu hoặc từ chối input trước khi conversion làm mất dữ liệu. Kết quả được B02 dùng như nền tảng để xử lý nhiều record.
 
 **Biên không nhúng:** mọi ví dụ chạy như process local. Không giả định MCU, thanh ghi, MMIO, ISR, DMA, HAL, RTOS, kích thước word hay endianness cụ thể. `volatile` chỉ được giải thích theo abstract machine của C, không được biến thành lời hứa về atomicity hoặc đồng bộ luồng.
 
@@ -40,7 +40,7 @@
 ## 2. Định vị trong lộ trình (Mental Map)
 
 ```text
-B00: build/run/oracle
+B00: build/run/tiêu chí kiểm chứng
           │
           ▼
 B01: value domain → C type → lifetime/linkage → aggregate/tag → checked conversion
@@ -76,7 +76,7 @@ Câu hỏi mở đầu là một decision gate: “Dữ liệu này có miền g
 
 ##### Vai trò và quyết định cần đưa ra
 
-Người thiết kế record phải quyết định `id` có âm không, nhiệt độ có cần dấu không, record mang đồng thời hay chỉ một payload, và input text sai sẽ được báo thế nào. Quyết định này định hình public contract và oracle của gateway.
+Người thiết kế record phải quyết định `id` có âm không, nhiệt độ có cần dấu không, record mang đồng thời hay chỉ một payload, và input text sai sẽ được báo thế nào. Quyết định này định hình public contract và tiêu chí kiểm chứng của gateway.
 
 ##### Cơ chế và mental model
 
@@ -86,11 +86,11 @@ Người thiết kế record phải quyết định `id` có âm không, nhiệt
 
 Dùng gate này trước mọi declaration mang nghĩa nghiệp vụ. Không cần over-engineer biến đếm cục bộ hiển nhiên; trade-off là vài phút thiết kế đổi lấy ít conversion ngầm và ít trạng thái bất khả thi hơn.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Context/input:** operator gửi `id=17`, `kind=temp`, `raw=25375`.
 - **Decision/artifact:** chọn `uint32_t`, `enum`, tagged `union` và `struct DiagnosticRecord`.
-- **Expected/oracle:** chạy `./b01_variables_demo --record 17 temp 25375`; stdout phải đúng một dòng `record id=17 kind=TEMP_C raw=25375 whole=25 processed=1`, exit `0`.
+- **Expected/tiêu chí kiểm chứng:** chạy `./b01_variables_demo --record 17 temp 25375`; stdout phải đúng một dòng `record id=17 kind=TEMP_C raw=25375 whole=25 processed=1`, exit `0`.
 
 ##### Best practice
 
@@ -98,7 +98,7 @@ Dùng gate này trước mọi declaration mang nghĩa nghiệp vụ. Không c�
 
 ##### Failure và troubleshooting
 
-**Dấu hiệu:** output có RPM rất lớn từ `-1` → **nguyên nhân:** chọn/cast trước khi xác định domain → **chẩn đoán:** chạy negative oracle và xem exit code → **sửa:** parse kiểu rộng, range-check, rồi cast → **phòng tránh:** review mọi conversion tại trust boundary.
+**Dấu hiệu:** output có RPM rất lớn từ `-1` → **nguyên nhân:** chọn/cast trước khi xác định domain → **chẩn đoán:** chạy tiêu chí kiểm chứng cho trường hợp lỗi và xem exit code → **sửa:** parse kiểu rộng, range-check, rồi cast → **phòng tránh:** review mọi conversion tại trust boundary.
 
 #### OUT-B01-02 Basic Data Types
 
@@ -120,11 +120,11 @@ Integer promotions và usual arithmetic conversions có thể đổi signedness 
 
 Dùng fixed-width ở record/file/protocol cần đúng số bit. Dùng `int` cho giá trị tự nhiên trong range của `int`; không dùng `uint32_t` cho mọi biến chỉ vì “rõ kích thước”, vì loop/index và phép trừ có thể khó xử lý hơn.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input:** giới hạn hợp lệ lớn nhất `4294967295`.
 - **Action:** `checked_u32()` nhận `int64_t`, so với `UINT32_MAX`, rồi gán.
-- **Oracle:** `./b01_variables_demo --self-test` in `B01 SELF-TEST PASS checks=6`; `_Static_assert(sizeof(uint32_t) * CHAR_BIT == 32U, ...)` phải compile. `sizeof` tính theo byte C, nên không được giả định một byte luôn có tám bit.
+- **tiêu chí kiểm chứng:** `./b01_variables_demo --self-test` in `B01 SELF-TEST PASS checks=6`; `_Static_assert(sizeof(uint32_t) * CHAR_BIT == 32U, ...)` phải compile. `sizeof` tính theo byte C, nên không được giả định một byte luôn có tám bit.
 
 ##### Best practice
 
@@ -154,10 +154,10 @@ Developer quyết định state tồn tại trong một call, suốt process hay
 
 Dùng automatic local làm mặc định. Dùng file-scope `static` cho implementation detail thật sự cần state lâu dài; tránh mutable global khi có thể truyền context vì nó làm test, reentrancy và concurrency khó hơn.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Action:** gọi executable hai lần độc lập với cùng input.
-- **Oracle:** mỗi lệnh `./b01_variables_demo --record 17 temp 25375` đều kết thúc `processed=1`, chứng minh counter thuộc process, không bền qua lần chạy mới.
+- **tiêu chí kiểm chứng:** mỗi lệnh `./b01_variables_demo --record 17 temp 25375` đều kết thúc `processed=1`, chứng minh counter thuộc process, không bền qua lần chạy mới.
 
 ##### Best practice
 
@@ -187,10 +187,10 @@ Trong `parse_i64(const char *text, int64_t *out)`, callee đọc chuỗi nhưng 
 
 Dùng `const` làm contract đọc-only. Chỉ dùng `volatile` cho object thật sự bị thay đổi ngoài luồng abstract-machine theo platform contract; trong refresher portable này không có đối tượng như vậy. Dùng `restrict` chỉ khi chứng minh non-aliasing.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Negative snippet:** thêm `text[0] = 'x';` vào `parse_i64`.
-- **Oracle:** strict build phải thất bại với diagnostic kiểu “assignment of read-only location”; bản asset nguyên trạng build exit `0`.
+- **tiêu chí kiểm chứng:** strict build phải thất bại với diagnostic kiểu “assignment of read-only location”; bản asset nguyên trạng build exit `0`.
 
 ##### Best practice
 
@@ -220,10 +220,10 @@ Trong B01, pointer tạo output parameter cho parser/converter. API phải quy�
 
 Dùng pointer khi callee cần quan sát/sửa object caller hoặc biểu diễn optional object. Không dùng pointer chỉ để tránh copy scalar nhỏ; value parameter đơn giản hơn và loại bỏ null/lifetime state.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input/action:** self-test gọi `checked_u32(4294967296, &converted)`.
-- **Expected/oracle:** hàm trả `false`, `--self-test` vẫn in `PASS checks=6`; không có dereference ngoài range/null.
+- **Expected/tiêu chí kiểm chứng:** hàm trả `false`, `--self-test` vẫn in `PASS checks=6`; không có dereference ngoài range/null.
 
 ##### Best practice
 
@@ -253,10 +253,10 @@ Mỗi object `DiagnosticRecord` chứa storage cho mọi member; `kind` quyết 
 
 Dùng struct cho dữ liệu cùng tồn tại và cùng lifecycle. Không dùng để overlay packet/file bằng cast raw bytes; cần parser/serializer rõ endianness, padding và range.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input:** `id=18`, kind `rpm`, raw `3200` trong self-test.
-- **Artifact/oracle:** `make_record()` tạo object có `id==18`, `kind==READING_RPM`, `value.rpm==3200`; `--self-test` đạt check tương ứng.
+- **Artifact/tiêu chí kiểm chứng:** `make_record()` tạo object có `id==18`, `kind==READING_RPM`, `value.rpm==3200`; `--self-test` đạt check tương ứng.
 
 ##### Best practice
 
@@ -286,10 +286,10 @@ Thiết kế luồng tạo → validate → publish → chỉ đọc. `print_rec
 
 Truyền value cho record nhỏ, immutable khi ownership đơn giản; truyền pointer khi cần output/mutation hoặc tránh copy object lớn. Không tối ưu theo cảm tính; đo nếu size/speed là vấn đề.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Action:** `./b01_variables_demo --record 17 temp 25375`.
-- **Oracle:** `print_record(&record)` đọc đúng các member và tính `whole=25`; stdout phải khớp hoàn toàn dòng đã công bố ở OUT-B01-01.
+- **tiêu chí kiểm chứng:** `print_record(&record)` đọc đúng các member và tính `whole=25`; stdout phải khớp hoàn toàn dòng đã công bố ở OUT-B01-01.
 
 ##### Best practice
 
@@ -319,10 +319,10 @@ Ghi `candidate.value.rpm` thiết lập representation dùng cho member đó; `p
 
 Dùng cho variant có tag/invariant rõ và memory trade-off có ích. Không dùng khi các field đồng thời tồn tại; khi đó struct thường đúng hơn. Không dùng raw union bytes làm external format.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input/action:** `./b01_variables_demo --record 18 rpm 3200`.
-- **Expected/oracle:** stdout `record id=18 kind=RPM raw=3200 processed=1`, exit `0`; output không có field nhiệt độ.
+- **Expected/tiêu chí kiểm chứng:** stdout `record id=18 kind=RPM raw=3200 processed=1`, exit `0`; output không có field nhiệt độ.
 
 ##### Best practice
 
@@ -352,10 +352,10 @@ Enum thay magic numbers `1/2` bằng `READING_TEMP_C/READING_RPM`, giúp switch 
 
 Dùng cho tập lựa chọn nhỏ, ổn định trong process. Không ghi raw `sizeof(enum)` ra file/protocol; external format cần width xác định và mapping encode/decode.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input/action:** `./b01_variables_demo --record 7 watts 12`.
-- **Expected/oracle:** stderr `error: kind must be 'temp' or 'rpm'`, stdout rỗng, exit `2`.
+- **Expected/tiêu chí kiểm chứng:** stderr `error: kind must be 'temp' or 'rpm'`, stdout rỗng, exit `2`.
 
 ##### Best practice
 
@@ -385,10 +385,10 @@ Boundary CLI parse vào `int64_t`; developer phải range-check trước cast sa
 
 Dùng cast khi conversion đã được chứng minh và muốn làm intent rõ. Không cast để tắt warning pointer/type; warning thường chỉ ra contract mismatch cần sửa.
 
-##### Ví dụ cụ thể và oracle
+##### Ví dụ cụ thể và tiêu chí kiểm chứng
 
 - **Input/action:** `./b01_variables_demo --record 17 rpm -1`.
-- **Expected/oracle:** stderr `error: value '-1' is outside uint32 range for RPM`, stdout rỗng, exit `2`; không xuất hiện `4294967295`.
+- **Expected/tiêu chí kiểm chứng:** stderr `error: value '-1' is outside uint32 range for RPM`, stdout rỗng, exit `2`; không xuất hiện `4294967295`.
 
 ##### Best practice
 
@@ -432,7 +432,7 @@ record id=17 kind=TEMP_C raw=25375 whole=25 processed=1
 
 | Dấu hiệu | Nguyên nhân | Chẩn đoán | Sửa | Phòng tránh |
 |---|---|---|---|---|
-| RPM từ `-1` thành số rất lớn | Cast unsigned quá sớm | Chạy negative oracle, xem điểm cast | Range-check ở `int64_t` | Boundary tests cho min/max ±1 |
+| RPM từ `-1` thành số rất lớn | Cast unsigned quá sớm | Chạy tiêu chí kiểm chứng cho trường hợp lỗi, xem điểm cast | Range-check ở `int64_t` | Boundary tests cho min/max ±1 |
 | Record đôi lúc có field rác | Automatic object chưa init | `-Wuninitialized`, trace constructor | `= {0}` và publish cuối | Một creator giữ invariant |
 | Tag đúng nhưng payload sai đơn vị | Union member/tag mismatch | Log tag tại write/read | Switch exhaustive, constructor tập trung | Test từng variant |
 | Test phụ thuộc thứ tự | Mutable static state | Chạy riêng và theo suite | Truyền context/reset rõ | Lifetime ngắn nhất |
@@ -447,7 +447,7 @@ record id=17 kind=TEMP_C raw=25375 whole=25 processed=1
 - **Aggregate:** struct/array; struct chứa đồng thời các member.
 - **Tagged union:** union đi kèm tag enum chỉ rõ member hợp lệ.
 - **Narrowing conversion:** conversion sang miền biểu diễn hẹp hơn.
-- **Oracle:** output/exit code cụ thể dùng để quyết định pass/fail, không phải nhận xét “trông đúng”.
+- **tiêu chí kiểm chứng:** output/exit code cụ thể dùng để quyết định pass/fail, không phải nhận xét “trông đúng”.
 
 ## 7. Nguồn tham khảo và provenance phần bổ sung
 

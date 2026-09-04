@@ -3,7 +3,7 @@
 ## 🎯 Learning Outcomes
 
 > **Learning Outcome:** ADVC-H1SD — Thiết kế, hiện thực và kiểm chứng mô-đun C17 dùng cấu trúc dữ liệu có ownership/invariant rõ và thuật toán phù hợp workload.  
-> **Increment:** M00-FND-06 — executable C17 minh họa array, list, tree, hash, stack, queue cùng `qsort`/`bsearch`, có oracle xác định.
+> **Increment:** M00-FND-06 — executable C17 minh họa array, list, tree, hash, stack, queue cùng `qsort`/`bsearch`, có tiêu chí kiểm chứng xác định.
 
 ## Kiến thức tiên quyết, mental map và ranh giới
 
@@ -68,7 +68,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Phân loại giúp shortlist lựa chọn; không dùng nhãn thay benchmark hoặc proof. Cùng dữ liệu có thể cần nhiều index, đổi lại tốn bộ nhớ và đồng bộ invariant.
 
-**Ví dụ/oracle riêng.** Workload `append=1000, lookup_by_key=100000, preserve_order=no` được phân loại `dynamic + keyed`; quyết định hash table. Oracle review chính xác: `class=dynamic,keyed; primary=lookup; candidate=hash-table`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Workload `append=1000, lookup_by_key=100000, preserve_order=no` được phân loại `dynamic + keyed`; quyết định hash table. tiêu chí kiểm chứng review chính xác: `class=dynamic,keyed; primary=lookup; candidate=hash-table`.
 
 **Best practice.** Rule: ghi workload trước representation → rationale: tối ưu đúng operation → positive: chọn hash cho lookup key dày → negative: chọn list vì “linh hoạt”, rồi lookup tuyến tính.
 
@@ -86,7 +86,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Composite tăng tính kết dính nhưng copy cả struct có chi phí và pointer member không tự deep-copy.
 
-**Ví dụ/oracle riêng.** Với `record_t r={.key=7,.payload=70};`, oracle `key=7 payload=70 size_at_least=8`; chỉ kiểm `sizeof r >= 2*sizeof(int)`, không hard-code padding.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Với `record_t r={.key=7,.payload=70};`, tiêu chí kiểm chứng `key=7 payload=70 size_at_least=8`; chỉ kiểm `sizeof r >= 2*sizeof(int)`, không hard-code padding.
 
 **Best practice.** Rule: dùng fixed-width type chỉ khi contract cần đúng width và kiểm availability → rationale: miền/serialization rõ → positive: `int` cho key nội bộ → negative: giả định mọi `int` đúng 32 bit trong file format.
 
@@ -104,7 +104,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Invariant mạnh dễ audit nhưng có thể tốn kiểm tra; release build có thể bỏ assert nội bộ, không bỏ validation input public.
 
-**Ví dụ/oracle riêng.** Stack capacity `3` có contract `0<=size<=3`; push thứ tư trả false và không đổi state. Oracle: `push4=rejected size=3 top=30`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Stack capacity `3` có contract `0<=size<=3`; push thứ tư trả false và không đổi state. tiêu chí kiểm chứng: `push4=rejected size=3 top=30`.
 
 **Best practice.** Rule: viết invariant cạnh type/API → rationale: mọi operation cùng duy trì một contract → positive: queue ghi `count<=capacity` → negative: dùng sentinel mơ hồ và không phân biệt full/empty.
 
@@ -124,7 +124,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Public struct thuận tiện và zero boilerplate nhưng khóa ABI/layout; opaque type linh hoạt hơn, đổi lại cần lifecycle API.
 
-**Ví dụ/oracle riêng.** `record_t r={.key=12,.payload=120}; r.payload+=1;` cho oracle `record=12:121`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** `record_t r={.key=12,.payload=120}; r.payload+=1;` cho tiêu chí kiểm chứng `record=12:121`.
 
 **Best practice.** Rule: thao tác duy trì invariant qua hàm khi type phức tạp → rationale: một điểm kiểm tra → positive: `queue_push` kiểm full → negative: caller sửa trực tiếp `count`.
 
@@ -142,7 +142,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Tốt cho dense data; không tốt khi liên tục chèn/xóa giữa tập lớn và phải giữ pointer ổn định.
 
-**Ví dụ/oracle riêng.** Mảng `{9,2,6}` sau sort tăng là `{2,6,9}`; oracle `array[0]=2 array[2]=9 count=3`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Mảng `{9,2,6}` sau sort tăng là `{2,6,9}`; tiêu chí kiểm chứng `array[0]=2 array[2]=9 count=3`.
 
 **Best practice.** Rule: luôn mang length cùng pointer → rationale: C không lưu length khi array decay → positive: `(data,count)` → negative: loop tới khi gặp `0` dù `0` là dữ liệu hợp lệ.
 
@@ -160,7 +160,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Insert đầu O(1) trong model; đổi lại mỗi node có overhead, allocation và locality kém. Không chọn cho lookup index dày.
 
-**Ví dụ/oracle riêng.** Prepend lần lượt `1,3,5` tạo thứ tự `5,3,1`; oracle `list.count=3 sum=9 head=5`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Prepend lần lượt `1,3,5` tạo thứ tự `5,3,1`; tiêu chí kiểm chứng `list.count=3 sum=9 head=5`.
 
 **Best practice.** Rule: xác định một owner chain và destroy mọi node → rationale: tránh leak/double-free → positive: loop lưu `next` trước `free` → negative: `free(node); node=node->next` đọc object đã free.
 
@@ -178,9 +178,9 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Phù hợp AST/menu/org chart; không ép dữ liệu nhiều-parent thành tree—graph phù hợp hơn.
 
-**Ví dụ/oracle riêng.** Root `A` có children `B,C`, `B` có `D`; preorder oracle `A,B,D,C`, node count `4`, height theo số node `3`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Root `A` có children `B,C`, `B` có `D`; preorder tiêu chí kiểm chứng `A,B,D,C`, node count `4`, height theo số node `3`.
 
-**Best practice.** Rule: công bố convention height và child order → rationale: tránh oracle mơ hồ → positive: “leaf height=1” → negative: test mong `2` nhưng code đếm edge.
+**Best practice.** Rule: công bố convention height và child order → rationale: tránh tiêu chí kiểm chứng mơ hồ → positive: “leaf height=1” → negative: test mong `2` nhưng code đếm edge.
 
 **Failure chain.** Dấu hiệu recursion không dừng → nguyên nhân cycle/shared child sai contract → chẩn đoán mark visited → sửa parent/link → phòng ngừa validate acyclic/single-owner trước traversal.
 
@@ -196,7 +196,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Tốt cho equality lookup, không tự cung cấp sorted traversal/range query; worst-case probing O(n).
 
-**Ví dụ/oracle riêng.** Capacity `7`, keys `5,12,19` cùng home bucket `5`; key `19` nằm sau ba probe. Oracle `hash.key=19 value=190 probes=3`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Capacity `7`, keys `5,12,19` cùng home bucket `5`; key `19` nằm sau ba probe. tiêu chí kiểm chứng `hash.key=19 value=190 probes=3`.
 
 **Best practice.** Rule: giới hạn probe và quản lý load factor → rationale: tránh loop vô hạn/cluster → positive: fail sau `capacity` probes → negative: `while(true)` khi table full.
 
@@ -216,11 +216,11 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** API chung giúp thay representation nhưng generic `void *` giảm type safety; typed API rõ hơn cho Unit.
 
-**Ví dụ/oracle riêng.** Collection set nhận `insert(7), insert(7)` theo replace semantics; oracle `size=1 find(7)=present`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Collection set nhận `insert(7), insert(7)` theo replace semantics; tiêu chí kiểm chứng `size=1 find(7)=present`.
 
 **Best practice.** Rule: status phải phân biệt success/missing/full → rationale: caller xử lý xác định → positive: enum result → negative: trả `NULL` vừa có nghĩa missing vừa là stored null.
 
-**Failure chain.** Dấu hiệu caller coi full là success → nguyên nhân status mơ hồ → chẩn đoán contract/test branch → sửa typed status → phòng ngừa table oracle từng outcome.
+**Failure chain.** Dấu hiệu caller coi full là success → nguyên nhân status mơ hồ → chẩn đoán contract/test branch → sửa typed status → phòng ngừa table tiêu chí kiểm chứng từng outcome.
 
 #### OUT-B06-14 2.2 Analyzing an Algorithm
 
@@ -234,7 +234,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Dùng growth analysis cho scale/architecture; benchmark cho constant/cache/toolchain. Không suy Big-O chỉ từ một lần đo.
 
-**Ví dụ/oracle riêng.** Linear search key cuối trong 5 phần tử thực hiện đúng `5` comparisons; oracle `n=5 found=yes comparisons=5`, phân tích worst O(n).
+**Ví dụ/tiêu chí kiểm chứng riêng.** Linear search key cuối trong 5 phần tử thực hiện đúng `5` comparisons; tiêu chí kiểm chứng `n=5 found=yes comparisons=5`, phân tích worst O(n).
 
 **Best practice.** Rule: ghi rõ case và assumptions → rationale: “O(1)” hash có điều kiện → positive: “expected O(1), worst O(n)” → negative: tuyên bố luôn O(1).
 
@@ -254,7 +254,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Random access O(1) trong model; insert đầu O(n). Pointer tới element có thể invalid sau realloc.
 
-**Ví dụ/oracle riêng.** Xóa index `1` khỏi `{4,8,15,16}` và giữ order cho `{4,15,16}`; oracle `size=3 sequence=4,15,16 moves=2`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Xóa index `1` khỏi `{4,8,15,16}` và giữ order cho `{4,15,16}`; tiêu chí kiểm chứng `size=3 sequence=4,15,16 moves=2`.
 
 **Best practice.** Rule: validate `index < size` trước access → rationale: tránh UB → positive: return false khi index `4` → negative: đọc `data[size]`.
 
@@ -272,7 +272,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** O(1) removal khi có predecessor/node phù hợp; tìm predecessor vẫn O(n). Doubly list tốn thêm pointer nhưng xóa node trực tiếp dễ hơn.
 
-**Ví dụ/oracle riêng.** List `10→20→30`, remove node sau head; oracle `sequence=10,30 removed=20 size=2`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** List `10→20→30`, remove node sau head; tiêu chí kiểm chứng `sequence=10,30 removed=20 size=2`.
 
 **Best practice.** Rule: update links trước free và giữ `next` cần thiết → rationale: không dereference freed node → positive: `victim=head->next; head->next=victim->next; free(victim)` → negative: free trước khi đọc next.
 
@@ -290,7 +290,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** BST hữu ích cho ordered traversal/range; unbalanced implementation đơn giản nhưng worst lookup O(n).
 
-**Ví dụ/oracle riêng.** Insert `4,2,6`; oracle `tree.nodes=3 height=2 inorder=2,4,6` với leaf height `1`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Insert `4,2,6`; tiêu chí kiểm chứng `tree.nodes=3 height=2 inorder=2,4,6` với leaf height `1`.
 
 **Best practice.** Rule: không gọi mọi binary tree là BST → rationale: search pruning cần ordering invariant → positive: validate inorder → negative: dùng BST search trên arbitrary tree.
 
@@ -308,7 +308,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Hợp menu/AST; graph phù hợp shared child/cycle. Recursion dễ đọc nhưng depth không tin cậy có thể tràn call stack implementation.
 
-**Ví dụ/oracle riêng.** Tree `root` children `a,b,c`, `b` child `d`; breadth-first oracle `root,a,b,c,d count=5`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Tree `root` children `a,b,c`, `b` child `d`; breadth-first tiêu chí kiểm chứng `root,a,b,c,d count=5`.
 
 **Best practice.** Rule: xác định owner của sibling/subtree → rationale: destroy đúng một lần → positive: root owns all descendants → negative: hai parent cùng free một child.
 
@@ -326,7 +326,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Priority queue: peek O(1), push/pop O(log n) trong model; không hỗ trợ tìm arbitrary key nhanh hay sorted iteration trực tiếp.
 
-**Ví dụ/oracle riêng.** Min-heap push `7,2,5`, rồi pop; oracle `pop=2 remaining_root=5 size=2`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Min-heap push `7,2,5`, rồi pop; tiêu chí kiểm chứng `pop=2 remaining_root=5 size=2`.
 
 **Best practice.** Rule: kiểm overflow khi tính child index/capacity → rationale: `2*i+1` có thể wrap với size lớn → positive: chỉ tính khi `i <= (size-2)/2` → negative: arithmetic không guard.
 
@@ -344,11 +344,11 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Bounded circular queue không allocation sau init, deterministic capacity; đổi lại phải xử lý full.
 
-**Ví dụ/oracle riêng.** Enqueue `8,13`, dequeue một; oracle `queue.pop=8 remaining=1 next=13`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Enqueue `8,13`, dequeue một; tiêu chí kiểm chứng `queue.pop=8 remaining=1 next=13`.
 
 **Best practice.** Rule: công bố full policy và không overwrite im lặng → rationale: tránh mất dữ liệu → positive: return false giữ state → negative: advance tail và đè phần tử chưa đọc.
 
-**Failure chain.** Dấu hiệu FIFO đảo/mất item → nguyên nhân head/tail wrap sai → chẩn đoán test qua boundary → sửa modulo/count update → phòng ngừa wrap-around oracle.
+**Failure chain.** Dấu hiệu FIFO đảo/mất item → nguyên nhân head/tail wrap sai → chẩn đoán test qua boundary → sửa modulo/count update → phòng ngừa wrap-around tiêu chí kiểm chứng.
 
 #### OUT-B06-22 2.3.7 Stacks
 
@@ -362,7 +362,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Bounded stack đơn giản, cache-friendly; dynamic stack linh hoạt nhưng allocation/failure phức tạp. Không dùng khi cần FIFO.
 
-**Ví dụ/oracle riêng.** Push `2,4,6`, pop; oracle `stack.pop=6 remaining=2 next=4`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Push `2,4,6`, pop; tiêu chí kiểm chứng `stack.pop=6 remaining=2 next=4`.
 
 **Best practice.** Rule: kiểm full/empty trước đổi `size` → rationale: tránh underflow/partial state → positive: false và giữ size → negative: `--size` khi zero.
 
@@ -380,7 +380,7 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** `qsort` portable, generic nhưng callback có overhead/type erasure và stability không được hứa. Custom stable sort cần khi equal-key order quan trọng.
 
-**Ví dụ/oracle riêng.** Sort keys `{42,5,31,7,19}` bằng comparator quan hệ cho oracle `5,7,19,31,42`; equal-order không thuộc oracle.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Sort keys `{42,5,31,7,19}` bằng comparator quan hệ cho tiêu chí kiểm chứng `5,7,19,31,42`; equal-order không thuộc tiêu chí kiểm chứng.
 
 **Best practice.** Rule: comparator trả `(a>b)-(a<b)`, không `a-b` → rationale: tránh signed overflow → positive: relational compare → negative: subtraction với `INT_MIN/INT_MAX`.
 
@@ -398,13 +398,13 @@ Data structure là quyết định biểu diễn dữ liệu cùng invariant và
 
 **Khi dùng/không dùng/trade-off.** Binary search cho array sorted; hash cho equality workload; tree cho ordered updates/ranges. Không gọi `bsearch` trên unsorted data.
 
-**Ví dụ/oracle riêng.** Sau sort trên, tìm key `31` trả payload `310`; tìm `99` trả `NULL`. Oracle `found31=310 found99=none`.
+**Ví dụ/tiêu chí kiểm chứng riêng.** Sau sort trên, tìm key `31` trả payload `310`; tìm `99` trả `NULL`. tiêu chí kiểm chứng `found31=310 found99=none`.
 
 **Best practice.** Rule: dùng cùng ordering cho `qsort` và `bsearch` → rationale: precondition sorted phải khớp query → positive: một comparator dùng lại → negative: sort tăng nhưng search comparator giảm.
 
 **Failure chain.** Dấu hiệu key hiện hữu nhưng trả `NULL` → nguyên nhân range chưa sort/comparator lệch → chẩn đoán validate adjacent order → sửa sort và comparator → phòng ngừa coupled sort/search test.
 
-## Ví dụ tích hợp và exact oracle
+## Ví dụ tích hợp và tiêu chí kiểm chứng chính xác
 
 `assets/b06_dsa_demo.c` dùng đại diện array/list/BST/hash/stack/queue cùng `qsort`/`bsearch`. General tree và heap được phân tích ở leaf tương ứng nhưng không được nhồi vào executable; việc chọn representative subset giữ demo audit được mà vẫn cover quyết định cho mọi cấu trúc.
 
@@ -452,7 +452,7 @@ error: hash table full for key 99
 - **Stable sort:** các phần tử equal-key giữ thứ tự tương đối; ISO C không hứa `qsort` stable.
 - **Load factor:** tỷ lệ slot đã dùng trong hash table.
 - **Amortized cost:** cost trung bình trên một chuỗi operation theo proof/model, không phải average input tùy ý.
-- **Oracle:** kết quả/điều kiện chính xác dùng để quyết định pass/fail.
+- **tiêu chí kiểm chứng:** kết quả/điều kiện chính xác dùng để quyết định pass/fail.
 
 ## Tự kiểm tra — Quiz 5 câu
 
@@ -478,4 +478,4 @@ error: hash table full for key 99
 - **SEI CERT C Coding Standard**, Carnegie Mellon University Software Engineering Institute, online work-in-progress snapshot, truy cập 2026-08-22: https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/
 - **Dictionary of Algorithms and Data Structures**, U.S. National Institute of Standards and Technology, online reference, truy cập 2026-08-22: https://xlinux.nist.gov/dads/
 
-Các input/oracle và complexity examples là dữ liệu đào tạo synthetic. Complexity được gắn với model/algorithm đã nêu; normative claim về C library chỉ dựa trên C17.
+Các input/tiêu chí kiểm chứng và complexity examples là dữ liệu đào tạo synthetic. Complexity được gắn với model/algorithm đã nêu; normative claim về C library chỉ dựa trên C17.

@@ -6,12 +6,12 @@
 
 ## CASE-B06-01 · Ticket và tiêu chí thành công
 
-Đội record-tool cần một executable C17 nhỏ để chứng minh readiness trước khi xây ADT generic: sort/search records, duyệt list, kiểm tra hierarchy, lookup hash và mô phỏng LIFO/FIFO. Mục tiêu không phải nhồi mọi implementation vào một file; case phải chứng minh cách chọn representation và oracle cho toàn bộ outline, còn asset dùng một tập đại diện dễ audit.
+Đội record-tool cần một executable C17 nhỏ để chứng minh readiness trước khi xây ADT generic: sort/search records, duyệt list, kiểm tra hierarchy, lookup hash và mô phỏng LIFO/FIFO. Mục tiêu không phải nhồi mọi implementation vào một file; case phải chứng minh cách chọn representation và tiêu chí kiểm chứng cho toàn bộ outline, còn asset dùng một tập đại diện dễ audit.
 
 - **LO:** `ADVC-H1SD`.
 - **Increment:** `M00-FND-06`.
 - **Artifact:** `assets/b06_dsa_demo.c`.
-- **Success:** strict build exit `0`, zero warnings; happy/negative oracle đúng từng stream và exit code; không allocation lỗi/leak trong ca đã cho.
+- **Success:** strict build exit `0`, zero warnings; happy/tiêu chí kiểm chứng cho trường hợp lỗi đúng từng stream và exit code; không allocation lỗi/leak trong ca đã cho.
 - **Ranh giới:** ISO C17 portable; không hardware/embedded. Complexity là model phân tích, không phải timing guarantee.
 
 ## Mapping CASE-B06-01 tới toàn bộ leaf
@@ -20,14 +20,14 @@
 |---|---|
 | `OUT-B06-03` Think, how, classify data structure | Ma trận workload: sequence→array/list, hierarchy→tree, equality key→hash, LIFO/FIFO→stack/queue. |
 | `OUT-B06-04` Primitive/non-primitive data | Scalar `int` tạo `record_t`, node, table slot và ADT composite; không serialize raw layout. |
-| `OUT-B06-05` Design aspect | Invariant, capacity, ownership, duplicate/full policy và exact status/oracle được công bố. |
+| `OUT-B06-05` Design aspect | Invariant, capacity, ownership, duplicate/full policy và exact status/tiêu chí kiểm chứng được công bố. |
 | `OUT-B06-07` How to ogranize structure in C | `struct` + hàm operation; designated initializer và callback comparator. |
 | `OUT-B06-08` Data orgainize in array | Record array contiguous, sort rồi search. |
 | `OUT-B06-09` Data orgainize in linked list | Ba node singly-linked, traversal count/sum. |
 | `OUT-B06-10` Data orgainize with hierachy model | BST ba node đại diện rooted hierarchy; ownership/traversal có bound. |
 | `OUT-B06-11` Hashing | Open addressing, linear probing, collision và full-table failure. |
 | `OUT-B06-13` Collections and Collection operation | Insert/find/traverse/push/pop/enqueue/dequeue có status và postcondition. |
-| `OUT-B06-14` Analyzing an Algorithm | Case phân biệt worst/expected/model; oracle không dùng timing. |
+| `OUT-B06-14` Analyzing an Algorithm | Case phân biệt worst/expected/model; tiêu chí kiểm chứng không dùng timing. |
 | `OUT-B06-16` Arrays | Random access/sorted traversal; count đi cùng pointer. |
 | `OUT-B06-17` Linked Lists | Ba object node automatic nối thành singly-linked list; traversal count/sum trong lifetime của self-test. |
 | `OUT-B06-18` Binary Tree | BST ba node dựng sẵn; kiểm inorder/node count/height với convention leaf height `1`. |
@@ -56,7 +56,7 @@
 - Comparator không dùng phép trừ có thể overflow và cùng được dùng cho `qsort`/`bsearch`.
 - List/BST node trong demo có automatic storage duration, không gọi `free`; liên kết chỉ được dùng khi các object còn lifetime.
 - Hash probe bounded; stack/queue validate full/empty trước mutation.
-- Functional oracle không chứa địa chỉ, thời gian hoặc số comparison nội bộ của C library.
+- Functional tiêu chí kiểm chứng không chứa địa chỉ, thời gian hoặc số comparison nội bộ của C library.
 
 ## Phân tích lựa chọn và trade-off
 
@@ -70,12 +70,12 @@ Stack và queue cùng có bounded array nhưng semantics khác: stack là LIFO, 
 
 1. `record_compare` tạo ordering bằng hai phép so sánh, tránh `left->key - right->key`.
 2. Record array được `qsort`; `bsearch` nhận key record cùng comparator.
-3. List/BST được dựng từ object automatic có lifetime tới hết self-test; traversal thật tạo count/sum/inorder oracle.
+3. List/BST được dựng từ object automatic có lifetime tới hết self-test; traversal thật tạo count/sum/inorder tiêu chí kiểm chứng.
 4. Hash insert/lookup trả probe count xác định cho dataset đã chọn.
 5. Stack/queue trả status; self-test chỉ in PASS sau khi mọi invariant và expected value đúng.
 6. Negative mode kiểm table full mà không loop vô hạn hay overwrite slot.
 
-## Strict build và happy oracle
+## Strict build và tiêu chí kiểm chứng cho trường hợp hợp lệ
 
 Từ thư mục Unit:
 
@@ -98,13 +98,13 @@ queue.pop=8 remaining=1
 self-test=PASS
 ```
 
-Ý nghĩa oracle:
+Ý nghĩa tiêu chí kiểm chứng:
 
-- Sort tạo ordering tăng theo key; oracle không nói algorithm/stability.
-- Search tìm đúng payload `310`; oracle không nói số comparison hoặc vị trí khi duplicate.
+- Sort tạo ordering tăng theo key; tiêu chí kiểm chứng không nói algorithm/stability.
+- Search tìm đúng payload `310`; tiêu chí kiểm chứng không nói số comparison hoặc vị trí khi duplicate.
 - List, BST, hash, stack và queue mỗi cấu trúc chứng minh operation/invariant riêng, không chỉ đổi tên cùng một container.
 
-## Negative oracle
+## tiêu chí kiểm chứng cho trường hợp lỗi
 
 ```sh
 set +e
@@ -114,7 +114,7 @@ set -e
 printf 'exit=%d\n' "$rc"
 ```
 
-Oracle:
+tiêu chí kiểm chứng:
 
 - `rc` chính xác `2`.
 - `negative.out` là file rỗng.
@@ -137,9 +137,9 @@ Nếu chương trình treo, overwrite item hoặc trả success thì full-table 
 | Stack/queue bounded operation | O(1) | Khi không có concurrency/blocking. |
 | Binary heap push/pop (design alternative) | O(log n) | Đây là binary-heap algorithm, không phải `malloc` heap. |
 | `qsort` | Không claim complexity | ISO C không mandate algorithm/stability/cost. |
-| `bsearch` | Contract cần sorted input | Không đưa count comparison implementation-specific vào oracle. |
+| `bsearch` | Contract cần sorted input | Không đưa count comparison implementation-specific vào tiêu chí kiểm chứng. |
 
-Đo benchmark có thể bổ sung sau, nhưng một vài timing không chứng minh Big-O và timing không thuộc acceptance oracle của Unit.
+Đo benchmark có thể bổ sung sau, nhưng một vài timing không chứng minh Big-O và timing không thuộc acceptance tiêu chí kiểm chứng của Unit.
 
 ## Failure modes, chẩn đoán và phòng ngừa
 
@@ -147,7 +147,7 @@ Nếu chương trình treo, overwrite item hoặc trả success thì full-table 
 |---|---|---|---|---|
 | Sort sai ở key cực trị | comparator dùng phép trừ overflow | test `INT_MIN/INT_MAX`, antisymmetry | relational comparator | property test comparator |
 | `bsearch` trả `NULL` cho key có mặt | chưa sort hoặc comparator khác | validate adjacent ordering | sort và dùng chung comparator | coupled test |
-| Hash treo khi full | probe không bounded | counter vượt capacity | fail/resize sau capacity | full-table negative oracle |
+| Hash treo khi full | probe không bounded | counter vượt capacity | fail/resize sau capacity | full-table tiêu chí kiểm chứng cho trường hợp lỗi |
 | List leak/use-after-free | owner/destroy chain sai | Memcheck + trace node | lưu `next` trước free | single-owner contract |
 | BST inorder không tăng | insert phá ordering | inorder + lower/upper bounds | sửa branch/duplicate policy | mutation chỉ qua API |
 | Queue lấy `13` trước `8` | cập nhật head/tail sai | trace `{head,tail,count}` | sửa circular invariant | wrap/full/empty tests |
@@ -157,7 +157,7 @@ Nếu chương trình treo, overwrite item hoặc trả success thì full-table 
 
 ## Bài học chuyển giao
 
-Không có cấu trúc “tốt nhất” độc lập workload. Một artifact reviewable phải nối được: input/operation → representation → invariant/ownership → algorithm → exact oracle. Complexity claim luôn mang model/assumption; C library contract không được mở rộng bằng suy đoán từ tên hàm.
+Không có cấu trúc “tốt nhất” độc lập workload. Một artifact reviewable phải nối được: input/operation → representation → invariant/ownership → algorithm → tiêu chí kiểm chứng chính xác. Complexity claim luôn mang model/assumption; C library contract không được mở rộng bằng suy đoán từ tên hàm.
 
 ## Practice Time — không chấm điểm, không có lời giải
 
@@ -170,7 +170,7 @@ Tạo bản sao riêng của asset và thay dữ liệu bằng:
 - Stack push `1,3,5`; queue enqueue `4,6`.
 - Negative mode điền table rồi insert key `42`.
 
-Không copy lời giải từ nơi khác; giữ API/status/invariant, comparator relational, probe bounded và cleanup. Happy oracle mới:
+Không copy lời giải từ nơi khác; giữ API/status/invariant, comparator relational, probe bounded và cleanup. tiêu chí kiểm chứng cho trường hợp hợp lệ mới:
 
 ```text
 array.sorted=3,7,11,18
@@ -198,4 +198,4 @@ Nộp source bản sao, strict build command, output của hai mode và một de
 - **SEI CERT C Coding Standard**, Carnegie Mellon University Software Engineering Institute, online work-in-progress snapshot, truy cập 2026-08-22: https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/
 - **Dictionary of Algorithms and Data Structures**, U.S. National Institute of Standards and Technology, online reference, truy cập 2026-08-22: https://xlinux.nist.gov/dads/
 
-Case/data/oracle là synthetic; complexity và lựa chọn representation là phân tích được gắn giả định, còn claim về `qsort`/`bsearch` giới hạn ở contract ISO C17.
+Case/data/tiêu chí kiểm chứng là synthetic; complexity và lựa chọn representation là phân tích được gắn giả định, còn claim về `qsort`/`bsearch` giới hạn ở contract ISO C17.

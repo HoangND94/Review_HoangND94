@@ -8,7 +8,7 @@ Là developer của **MDB Edge Diagnostics Gateway — Simulated**, học viên 
 
 `Phan_0_Optional_C_Basics_Refresher/Session_0_B01_Variables_and_Data_Types/assets/b01_variables_demo.c`
 
-Artifact là ISO C17 hosted, không dùng API Linux hay extension compiler. Nó minh họa scalar, storage class, qualifier, pointer, struct, union, enum và checked cast trong cùng một đường chạy có oracle.
+Artifact là ISO C17 hosted, không dùng API Linux hay extension compiler. Nó minh họa scalar, storage class, qualifier, pointer, struct, union, enum và checked cast trong cùng một đường chạy có tiêu chí kiểm chứng.
 
 ## Mapping case đã chốt trong course plan
 
@@ -19,7 +19,7 @@ Artifact là ISO C17 hosted, không dùng API Linux hay extension compiler. Nó 
 
 | Leaf | Bằng chứng trực tiếp trong asset/case |
 |---|---|
-| OUT-B01-01 Introductory question? | Domain `id/kind/raw`, success/failure contract và oracle CLI được chốt trước type. |
+| OUT-B01-01 Introductory question? | Domain `id/kind/raw`, success/failure contract và tiêu chí kiểm chứng CLI được chốt trước type. |
 | OUT-B01-02 Basic Data Types | `uint32_t`, `int32_t`, `int64_t`, `bool`, `size_t`, macro `PRI*`. |
 | OUT-B01-03 Store Class | automatic `candidate`; file-scope `static records_processed`; function `static`. |
 | OUT-B01-04 Key word for variable | input pointer `const`; `_Static_assert`; không lạm dụng `volatile`. |
@@ -156,7 +156,7 @@ test "$negative_output" = \
   "error: value '-1' is outside uint32 range for RPM"
 ```
 
-Pass khi toàn bộ script exit `0`. Không chấp nhận “gần giống” vì oracle chủ ý cố định.
+Pass khi toàn bộ script exit `0`. Không chấp nhận “gần giống” vì tiêu chí kiểm chứng chủ ý cố định.
 
 ### 8. Giải thích sâu, failure modes và chuyển giao
 
@@ -169,7 +169,7 @@ Nguyên tắc chuyển giao: conversion chỉ là bước cuối sau validation;
 
 ## Practice Time — Không tính điểm, không có lời giải
 
-Tạo file riêng `practice_b01_voltage.c`; không sửa oracle của case. Bổ sung variant `volt` cho điện áp nguyên millivolt trong miền `0..5000`.
+Tạo file riêng `practice_b01_voltage.c`; không sửa tiêu chí kiểm chứng của case. Bổ sung variant `volt` cho điện áp nguyên millivolt trong miền `0..5000`.
 
 Yêu cầu:
 

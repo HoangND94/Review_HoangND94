@@ -40,7 +40,7 @@ Artifact là hosted ISO C17. Đặc biệt, nó **không** dùng nested function
 
 ### 1. Ticket và tiêu chí thành công
 
-- **Vai trò/stakeholder:** C developer; maintainer cần interface nhỏ, tester cần oracle deterministic, reviewer cần portability evidence.
+- **Vai trò/stakeholder:** C developer; maintainer cần interface nhỏ, tester cần tiêu chí kiểm chứng deterministic, reviewer cần portability evidence.
 - **Vấn đề:** nhận `LIMIT VALUE...`, tính sum/min/max, clipped sum và một recursive checksum mà không gom toàn bộ logic vào `main`.
 - **Ràng buộc:** ISO C17; tối đa 16 values; recursion tối đa 16; zero warnings; không GNU nested function; invalid token không tạo output một phần.
 - **Thành công:** self-test pass; happy fixture đúng hai dòng stdout/exit `0`; negative fixture đúng stderr/exit `2`; strict compiler gate pass.
@@ -172,7 +172,7 @@ test "$negative_output" = \
   "error: invalid integer at position 2: bad"
 ```
 
-Pass khi script exit `0`. Oracle bao gồm stdout/stderr separation, line order và exit status; “output gần giống” không pass.
+Pass khi script exit `0`. tiêu chí kiểm chứng bao gồm stdout/stderr separation, line order và exit status; “output gần giống” không pass.
 
 Để tạo **timing evidence thực sự lặp lại được**, dùng một process cho toàn workload thay vì timing hàng triệu lần khởi động CLI. `--benchmark` sinh ba giá trị từ recurrence unsigned xác định ở mỗi iteration, gọi các function contract và in checksum observable. Trên Ubuntu 22.04/WSL2, dùng đồng hồ nanosecond của GNU Coreutils `date`:
 
@@ -214,7 +214,7 @@ done
 size "$bench_dir/b03_O0" "$bench_dir/b03_O2"
 ```
 
-**Oracle chức năng chính xác cho warm-up và cả 10 measured runs:**
+**tiêu chí kiểm chứng chức năng chính xác cho warm-up và cả 10 measured runs:**
 
 ```text
 BENCH iterations=10000000 checksum=-230967616032
@@ -222,7 +222,7 @@ BENCH iterations=10000000 checksum=-230967616032
 
 Boundary argv của mode đo cũng cố định: `--benchmark 0` phải stdout rỗng, stderr đúng `error: iterations must be in range 1..50000000`, exit `2`; không đưa negative run này vào timing samples.
 
-Mỗi process phải stderr rỗng và exit `0`; mỗi file `.elapsed_ns` phải có đúng năm số không âm, median là dòng thứ ba sau sort. `compiler.txt`, `platform.txt`, hai median và bảng `size` là evidence cần lưu. Không có oracle portable cho nanosecond/số byte và không đặt điều kiện `O2 < O0`: scheduler, CPU frequency, thermal state, linker và toolchain gây nhiễu. Chỉ so hai build ngay trong cùng lượt, cùng source/input/máy; lặp toàn protocol nếu coefficient of variation hoặc samples dao động lớn.
+Mỗi process phải stderr rỗng và exit `0`; mỗi file `.elapsed_ns` phải có đúng năm số không âm, median là dòng thứ ba sau sort. `compiler.txt`, `platform.txt`, hai median và bảng `size` là evidence cần lưu. Không có tiêu chí kiểm chứng portable cho nanosecond/số byte và không đặt điều kiện `O2 < O0`: scheduler, CPU frequency, thermal state, linker và toolchain gây nhiễu. Chỉ so hai build ngay trong cùng lượt, cùng source/input/máy; lặp toàn protocol nếu coefficient of variation hoặc samples dao động lớn.
 
 **Evidence tham chiếu đã chạy ngày 2026-08-22** trong image khóa `codex/adv-c-jammy:20260821` (WSL2 x86-64), GCC `11.4.0`, glibc `2.35`; đây là quan sát của đúng fingerprint đó, **không phải acceptance threshold**:
 
@@ -278,7 +278,7 @@ gcd=1 calls=46
 - Exit của happy/negative/boundary lần lượt `0`, `2`, `0`; strict build zero warnings.
 - `--self-test` phải kiểm `(84,30)`, hai số bằng nhau, một operand `1`, invalid `0`, cặp boundary Fibonacci ở **cả hai thứ tự** đều normalize và cho đúng 46 calls, cùng guard nội bộ: khi 48 invocation đã được dùng, yêu cầu tạo invocation thứ 49 trả failure, giữ output không đổi.
 
-`calls` tính cả invocation đầu tiên và invocation base case: `gcd(84,30) → gcd(30,24) → gcd(24,6) → gcd(6,0)` là chính xác bốn. Normalization bắt buộc ở wrapper không được tính là một recursive invocation. Hãy tự chọn signature/status/output design và viết oracle script; tài liệu này không cung cấp solution.
+`calls` tính cả invocation đầu tiên và invocation base case: `gcd(84,30) → gcd(30,24) → gcd(24,6) → gcd(6,0)` là chính xác bốn. Normalization bắt buộc ở wrapper không được tính là một recursive invocation. Hãy tự chọn signature/status/output design và viết tiêu chí kiểm chứng script; tài liệu này không cung cấp solution.
 
 ## Provenance của các case
 

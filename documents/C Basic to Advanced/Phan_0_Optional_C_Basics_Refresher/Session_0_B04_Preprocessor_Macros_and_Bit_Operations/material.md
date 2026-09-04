@@ -16,7 +16,7 @@ Bạn cần biết khai báo biến/hàm, biểu thức, `uint32_t`, compile và
 
 ### Mental map
 
-`source.c` → **tiền xử lý token** (`#include`, `#define`, `#if`) → translation unit C → **toán tử bit trên giá trị unsigned** → ảnh cấu hình có invariant → oracle.
+`source.c` → **tiền xử lý token** (`#include`, `#define`, `#if`) → translation unit C → **toán tử bit trên giá trị unsigned** → ảnh cấu hình có invariant → tiêu chí kiểm chứng.
 
 Hai tầng phải tách biệt: preprocessor biến đổi token trước khi compiler kiểm kiểu; toán tử bit chạy trên giá trị khi chương trình thực thi. Macro không phải hàm, và mask không phải địa chỉ.
 
@@ -58,7 +58,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho include, guard, feature build-time và kiểm điều kiện dịch. Không dùng thay luồng điều khiển runtime hoặc hàm có kiểu. Lợi ích là zero runtime cost; đổi lại debugging và diagnostic có thể trỏ vào mã sau mở rộng.
 
-**Ví dụ riêng và oracle:** với `#define RETRIES 3` rồi `int n = RETRIES;`, chạy `gcc -std=c17 -E -P sample.c` phải có dòng `int n = 3;`. Đây là oracle token, khác với oracle chạy chương trình.
+**Ví dụ riêng và tiêu chí kiểm chứng:** với `#define RETRIES 3` rồi `int n = RETRIES;`, chạy `gcc -std=c17 -E -P sample.c` phải có dòng `int n = 3;`. Đây là tiêu chí kiểm chứng token, khác với tiêu chí kiểm chứng chạy chương trình.
 
 **Best practice:** **Rule:** xem output `-E` khi hành vi macro khó hiểu. **Rationale:** output cho thấy token compiler thực nhận. **Positive:** kiểm `int n = 3;`. **Negative:** chỉ đọc `#define` rồi đoán, bỏ sót macro bị header khác định nghĩa lại.
 
@@ -78,7 +78,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho cấu hình build hoặc thao tác preprocessor. Với hằng có kiểu, ưu tiên `enum`, `static const`; với hành vi runtime, ưu tiên hàm. Macro tiện nhưng namespace toàn translation unit và khó kiểm kiểu.
 
-**Ví dụ riêng và oracle:** `#define BUILD_LEVEL 2` cùng `printf("level=%d\n", BUILD_LEVEL);` phải in chính xác `level=2` và exit `0`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** `#define BUILD_LEVEL 2` cùng `printf("level=%d\n", BUILD_LEVEL);` phải in chính xác `level=2` và exit `0`.
 
 **Best practice:** **Rule:** mỗi macro public có prefix và contract. **Rationale:** macro không có namespace. **Positive:** `B04_BUILD_LEVEL`. **Negative:** `LEVEL`, dễ va chạm header khác và tạo warning/redefinition hoặc hành vi sai.
 
@@ -96,7 +96,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** phù hợp với cờ compile và literal cần cho `#if`; không phù hợp khi cần type, debugger symbol hoặc địa chỉ. `static const uint32_t` an toàn kiểu hơn nhưng không dùng trực tiếp trong `#if`.
 
-**Ví dụ riêng và oracle:** asset định nghĩa mặc định `B04_VARIANT portable_c17`; `./b04 --self-test | head -n1` phải là `config=portable_c17`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** asset định nghĩa mặc định `B04_VARIANT portable_c17`; `./b04 --self-test | head -n1` phải là `config=portable_c17`.
 
 **Best practice:** **Rule:** bao literal số bằng macro tạo hằng chuẩn khi cần, như `UINT32_C(1)`. **Rationale:** tránh suy luận kiểu không mong muốn. **Positive:** `UINT32_C(1) << 31`. **Negative:** `1 << 31`, có thể dịch vào bit dấu của `int` và gây undefined behavior.
 
@@ -114,7 +114,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho stringification/token-pasting hoặc pattern không biểu diễn được bằng hàm. Không dùng kiểu `MAX(i++, j++)`. Macro có thể inline mọi nơi nhưng hàm `static inline` cũng thường được tối ưu và an toàn hơn.
 
-**Ví dụ riêng và oracle:** `#define SQUARE_SAFE(x) ((x) * (x))`; với literal `4`, output là `square=16`. Không gọi macro này bằng `i++`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** `#define SQUARE_SAFE(x) ((x) * (x))`; với literal `4`, output là `square=16`. Không gọi macro này bằng `i++`.
 
 **Best practice:** **Rule:** argument runtime chỉ được evaluate một lần; dùng `static inline`. **Rationale:** side effect phải xác định. **Positive:** `square_u32(value)`. **Negative:** `SQUARE_SAFE(i++)`, tăng `i` hai lần và còn có thể gây hành vi không xác định do sequencing.
 
@@ -134,7 +134,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng header chuẩn đúng chức năng (`<stdint.h>` cho `uint32_t`, `<limits.h>` cho `CHAR_BIT`, `<inttypes.h>` cho macro format số nguyên). Không include `.c`. Nhiều include làm chậm build, nhưng thiếu include trực tiếp tạo phụ thuộc mong manh.
 
-**Ví dụ riêng và oracle:** file include trực tiếp cả `<stdint.h>` và `<limits.h>`, rồi kiểm `sizeof(uint32_t) * CHAR_BIT`; output chính xác `u32_bits=32` trên implementation có `uint32_t`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** file include trực tiếp cả `<stdint.h>` và `<limits.h>`, rồi kiểm `sizeof(uint32_t) * CHAR_BIT`; output chính xác `u32_bits=32` trên implementation có `uint32_t`.
 
 **Best practice:** **Rule:** header phải self-contained và có guard. **Rationale:** thứ tự include không được đổi nghĩa. **Positive:** consumer chỉ include header đó vẫn compile. **Negative:** header dùng `uint32_t` nhưng không include `<stdint.h>`, chỉ tình cờ compile theo thứ tự khác.
 
@@ -152,9 +152,9 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho khác biệt build thật sự hoặc feature availability; không dùng để che lỗi hay nhân bản logic nghiệp vụ. Mỗi nhánh thêm một biến thể cần build/test.
 
-**Ví dụ riêng và oracle:** build `gcc ... -DB04_VARIANT=training ...`; dòng đầu happy path phải là `config=training`. Build không `-D` phải là `config=portable_c17`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** build `gcc ... -DB04_VARIANT=training ...`; dòng đầu happy path phải là `config=training`. Build không `-D` phải là `config=portable_c17`.
 
-**Best practice:** **Rule:** mỗi nhánh supported phải có oracle CI. **Rationale:** compiler không kiểm nhánh bị loại. **Positive:** build cả default/training. **Negative:** nhánh `#ifdef LEGACY` không build nhiều tháng rồi hỏng cú pháp.
+**Best practice:** **Rule:** mỗi nhánh supported phải có tiêu chí kiểm chứng CI. **Rationale:** compiler không kiểm nhánh bị loại. **Positive:** build cả default/training. **Negative:** nhánh `#ifdef LEGACY` không build nhiều tháng rồi hỏng cú pháp.
 
 **Failure → xử lý:** chỉ cấu hình production fail → nhánh chưa được compile trong test → lưu command và preprocessed output → sửa nhánh → lập matrix build nhỏ, tránh tổ hợp cờ bùng nổ.
 
@@ -170,7 +170,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng để ngăn binary không thỏa precondition. Không lạm dụng cho mọi platform; có thể làm giảm khả năng port nếu điều kiện quá cứng.
 
-**Ví dụ riêng và oracle:** `gcc -std=c11 ... b04_macro_bits_demo.c` phải exit khác `0`, stderr chứa chính xác chuỗi `b04_macro_bits_demo.c requires ISO C17 or newer`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** `gcc -std=c11 ... b04_macro_bits_demo.c` phải exit khác `0`, stderr chứa chính xác chuỗi `b04_macro_bits_demo.c requires ISO C17 or newer`.
 
 **Best practice:** **Rule:** diagnostic nêu requirement và cách sửa. **Rationale:** người dùng cần hành động được. **Positive:** “requires ISO C17 or newer”. **Negative:** `#error bad`, không cho biết flag nào sai.
 
@@ -188,7 +188,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** tốt cho declaration family nhỏ và build label; không dùng để sinh hàng chục API khác hành vi. Ít lặp code nhưng diagnostic và IDE navigation kém hơn.
 
-**Ví dụ riêng và oracle:** `DECLARE_FLAG(READY, 2)` tạo identifier `READY_MASK`; kết hợp stringify cấu hình cho output `config=portable_c17`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** `DECLARE_FLAG(READY, 2)` tạo identifier `READY_MASK`; kết hợp stringify cấu hình cho output `config=portable_c17`.
 
 **Best practice:** **Rule:** token-pasting phải tạo identifier hợp lệ, có prefix và được compile-test. **Rationale:** lỗi chỉ lộ sau expansion. **Positive:** `name##_MASK`. **Negative:** nối dữ liệu người dùng hoặc token rỗng, tạo identifier khó đoán.
 
@@ -208,7 +208,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho flags, packed field, checksum đơn giản. Không dùng packing khi readability quan trọng hơn hoặc dữ liệu phải serialize đa nền tảng mà chưa định nghĩa byte order. Gọn bộ nhớ nhưng tăng rủi ro precedence/width.
 
-**Ví dụ riêng và oracle:** với `uint8_t x=0xA5`, `y=0x0F`, sau cast phù hợp: AND=`0x05`, OR=`0xAF`, XOR=`0xAA`, NOT(x)=`0x5A`; `UINT32_C(3)<<4`=`0x30`, rồi dịch phải 4 được `3`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** với `uint8_t x=0xA5`, `y=0x0F`, sau cast phù hợp: AND=`0x05`, OR=`0xAF`, XOR=`0xAA`, NOT(x)=`0x5A`; `UINT32_C(3)<<4`=`0x30`, rồi dịch phải 4 được `3`.
 
 **Best practice:** **Rule:** dùng toán hạng unsigned và kiểm shift. **Rationale:** shift âm/quá width là undefined; shift signed dễ phụ thuộc representation/range. **Positive:** `UINT32_C(1) << 31`. **Negative:** `1 << 31`.
 
@@ -228,7 +228,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng cho schema bit cố định, được document. Không dùng mask rời rạc với công thức field liên tục nếu chưa chứng minh. Packing nhanh/gọn nhưng thay schema có thể phá tương thích.
 
-**Ví dụ riêng và oracle:** image `0xA5` đọc MODE được `2`; ghi MODE=`5` tạo image `0xD5`. Giá trị `8` phải bị từ chối và image giữ nguyên.
+**Ví dụ riêng và tiêu chí kiểm chứng:** image `0xA5` đọc MODE được `2`; ghi MODE=`5` tạo image `0xD5`. Giá trị `8` phải bị từ chối và image giữ nguyên.
 
 **Best practice:** **Rule:** validate `value <= mask >> shift` trước shift. **Rationale:** masking âm thầm cắt mất bit cao. **Positive:** reject 8 cho field 3 bit. **Negative:** `(8<<4)&0x70` thành `0`, che lỗi input.
 
@@ -246,7 +246,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng khi nhiều cờ cùng word và API bảo vệ invariant. Không dùng read-modify-write này cho shared concurrent state nếu thiếu synchronization. Gọn nhưng coupling các cờ vào một word.
 
-**Ví dụ riêng và oracle:** bắt đầu `0x00`, set `ENABLE_MASK=0x01` và `READY_MASK=0x04` → `0x05`; clear READY → `0x01`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** bắt đầu `0x00`, set `ENABLE_MASK=0x01` và `READY_MASK=0x04` → `0x05`; clear READY → `0x01`.
 
 **Best practice:** **Rule:** clear bằng `&= ~mask`, không XOR. **Rationale:** XOR toggle phụ thuộc trạng thái cũ. **Positive:** clear hai lần vẫn `0`. **Negative:** `value ^= mask` lần hai bật cờ trở lại.
 
@@ -264,7 +264,7 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng khi cần update một field trong word chứa nhiều trường. Không dùng nếu schema có endian/serialization chưa chốt. API helper thêm code nhưng gom validation một nơi.
 
-**Ví dụ riêng và oracle:** image `0x81`, ghi field MODE=`3` tạo `0xB1`, đọc lại `3`, đồng thời bit 0 và bit 7 vẫn bằng `1`.
+**Ví dụ riêng và tiêu chí kiểm chứng:** image `0x81`, ghi field MODE=`3` tạo `0xB1`, đọc lại `3`, đồng thời bit 0 và bit 7 vẫn bằng `1`.
 
 **Best practice:** **Rule:** compute giá trị mới rồi commit một lần sau validation. **Rationale:** failure phải giữ state cũ. **Positive:** asset kiểm `field_value` trước assignment. **Negative:** clear field trước, sau đó mới phát hiện input quá lớn, làm mất state.
 
@@ -282,13 +282,13 @@ Hai tầng phải tách biệt: preprocessor biến đổi token trước khi co
 
 **Khi dùng/không dùng/trade-off:** dùng làm fixture unit test cho logic encode/decode trước khi tích hợp một adapter riêng. Không copy sang driver thật và không suy ra ordering/side-effect của thiết bị. Tách pure logic giúp test dễ; adapter phần cứng nếu có về sau cần chuẩn/platform riêng.
 
-**Ví dụ riêng và oracle:** chạy asset happy path phải lần lượt có `after_set=0x00000005`, `after_mode=0x00000055 mode=5`, `after_clear=0x00000051 enabled=1`, cuối cùng `self-test=PASS`. Negative dùng mode `8`, exit `2`, stdout rỗng, stderr đúng một dòng đã công bố trong Example.
+**Ví dụ riêng và tiêu chí kiểm chứng:** chạy asset happy path phải lần lượt có `after_set=0x00000005`, `after_mode=0x00000055 mode=5`, `after_clear=0x00000051 enabled=1`, cuối cùng `self-test=PASS`. Negative dùng mode `8`, exit `2`, stdout rỗng, stderr đúng một dòng đã công bố trong Example.
 
 **Best practice:** **Rule:** giữ core encode/decode thuần và truyền state bằng con trỏ object. **Rationale:** test không phụ thuộc môi trường và boundary rõ. **Positive:** `register_image_t image={0}`. **Negative:** cast số nguyên thành con trỏ rồi dereference; hành vi không thuộc Unit và có thể invalid/undefined.
 
 **Failure → xử lý:** demo chạy khác theo máy hoặc gây access violation → code đã đưa địa chỉ/extension vào core → search cast integer-to-pointer và dependency platform → trả về in-memory object → CI strict C17, không macro địa chỉ.
 
-## 4. Ví dụ tích hợp và oracle
+## 4. Ví dụ tích hợp và tiêu chí kiểm chứng
 
 Artifact: `assets/b04_macro_bits_demo.c`. Nó nối preprocessing, `#error`, `#`, `##`, object/function-like macro và API mask trên ảnh `uint32_t`.
 
@@ -309,7 +309,7 @@ after_clear=0x00000051 enabled=1
 self-test=PASS
 ```
 
-Negative oracle và command đầy đủ nằm trong `example.md`.
+tiêu chí kiểm chứng cho trường hợp lỗi và command đầy đủ nằm trong `example.md`.
 
 ## 5. Lỗi thường gặp
 
@@ -319,7 +319,7 @@ Negative oracle và command đầy đủ nằm trong `example.md`.
 | Field lân cận bị mất | ghi thẳng thay vì read-modify-write | so hex before/after | dùng clear-mask rồi OR | test bit không thuộc mask |
 | Bit cao sai | literal signed/shift quá width | warning + kiểm type/count | `UINT32_C`, range-check | strict warnings và boundary test |
 | Chỉ một build variant lỗi | nhánh `#if` chưa được compile | build matrix, `-E` | sửa nhánh | test mọi variant supported |
-| Negative path đổi state | mutate trước validate | snapshot state | validate rồi commit | oracle state-unchanged |
+| Negative path đổi state | mutate trước validate | snapshot state | validate rồi commit | tiêu chí kiểm chứng state-unchanged |
 
 ## 6. Thuật ngữ
 
@@ -355,4 +355,4 @@ Negative oracle và command đầy đủ nằm trong `example.md`.
 - `SRC-GCC11`: [GCC 11.4 manuals](https://gcc.gnu.org/onlinedocs/gcc-11.4.0/), GNU Project/Free Software Foundation, version 11.4.0, truy cập 2026-08-22; dùng `-E`, `-dM`, dialect/warning options.
 - `SRC-USER-CREF`: outline portable C refresher do người dùng phê duyệt 2026-08-22.
 
-**Phần bổ sung:** `[BỔ SUNG — nguồn: ISO C17, CERT C và GCC 11.4 manuals]` các oracle nhỏ và troubleshooting được biên soạn mới để dạy cách kiểm chứng; không tuyên bố là trích nguyên văn. Không có nội dung thiết bị/embedded bổ sung.
+**Phần bổ sung:** `[BỔ SUNG — nguồn: ISO C17, CERT C và GCC 11.4 manuals]` các tiêu chí kiểm chứng nhỏ và troubleshooting được biên soạn mới để dạy cách kiểm chứng; không tuyên bố là trích nguyên văn. Không có nội dung thiết bị/embedded bổ sung.

@@ -25,9 +25,9 @@ Artifact: [b09_defects_demo.c](assets/b09_defects_demo.c). Case đạt khi:
 - strict C17 build không warning;
 - input `4 sensor-A` exit `0` và stdout exact;
 - count vượt biên hoặc label sai policy exit `2`, stdout rỗng, stderr exact;
-- `--overflow-test` thực thi checked-add tại `UINT32_MAX+1`, chứng minh rejection transactional bằng exact oracle;
+- `--overflow-test` thực thi checked-add tại `UINT32_MAX+1`, chứng minh rejection transactional bằng tiêu chí kiểm chứng chính xác;
 - ASan+UBSan không diagnostic; Valgrind báo zero error/leak cho happy fixture;
-- mỗi mục `OUT-B09-01..08` truy vết được tới một code decision và oracle.
+- mỗi mục `OUT-B09-01..08` truy vết được tới một code decision và tiêu chí kiểm chứng.
 
 ### 2. Thiết kế và quyết định
 
@@ -44,7 +44,7 @@ Artifact: [b09_defects_demo.c](assets/b09_defects_demo.c). Case đạt khi:
 
 Alternative raw struct cast ngắn hơn nhưng không portable về endian/alignment/layout. Fixed local array bỏ allocation failure nhưng không minh họa ownership; heap được giữ với maximum nhỏ và guard đầy đủ. Silent label truncation bị loại vì hai identifier khác nhau có thể trở thành cùng label.
 
-### 3. Build và happy oracle
+### 3. Build và tiêu chí kiểm chứng cho trường hợp hợp lệ
 
 Từ thư mục Unit:
 
@@ -68,7 +68,7 @@ OK count=4 sum=100 label=sensor-A word=4660 mask=3
 
 `count=4` tạo `10,20,30,40`; checked total là `100`. Bytes `0x34,0x12` được giải mã little-endian thành `0x1234 = 4660`. Flags `3` có bit thấp nên internal contract pass.
 
-### 4. Negative oracles
+### 4. tiêu chí kiểm chứng cho trường hợp lỗis
 
 Count vượt giới hạn:
 
@@ -112,7 +112,7 @@ diff -u overflow.expected overflow.out
 
 Exit phải là `0`: self-test pass khi `checked_add_u32` trả rejection và sentinel `123` không bị sửa. Nếu helper nhận phép cộng hoặc ghi output trước khi reject, self-test in `ERROR overflow was not rejected transactionally` ở stderr và exit `3`.
 
-### 5. Diagnostics và memory oracle
+### 5. Diagnostics và memory tiêu chí kiểm chứng
 
 ```sh
 gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O1 -g \
@@ -129,7 +129,7 @@ valgrind --leak-check=full --show-leak-kinds=all \
   ./b09_valgrind 4 sensor-A
 ```
 
-Pass oracle: hai sanitizer runs giữ exact functional output và không diagnostic; Valgrind process exit `0`, `ERROR SUMMARY: 0 errors`, không “definitely lost”. Tool không thay thế boundary tests: một chương trình có policy sai nhưng truy cập memory hợp lệ vẫn có thể sanitizer-clean.
+Pass tiêu chí kiểm chứng: hai sanitizer runs giữ exact functional output và không diagnostic; Valgrind process exit `0`, `ERROR SUMMARY: 0 errors`, không “definitely lost”. Tool không thay thế boundary tests: một chương trình có policy sai nhưng truy cập memory hợp lệ vẫn có thể sanitizer-clean.
 
 ### 6. Failure modes và troubleshooting
 
@@ -165,12 +165,12 @@ Yêu cầu:
 
 1. Strict-build bằng GCC và, nếu có, Clang; cả hai phải zero warnings.
 2. Chứng minh exact happy stdout phía trên, stderr rỗng, exit `0`.
-3. Dùng input `8 bad_label`; oracle: exit `2`, stdout rỗng, exact stderr `ERROR label must be 1..15 alnum-or-dash characters`.
-4. Chạy lại `--overflow-test` dưới sanitizer và đối chiếu exact oracle `output-unchanged=123`; không thay bằng phép signed overflow cố tình.
+3. Dùng input `8 bad_label`; tiêu chí kiểm chứng: exit `2`, stdout rỗng, exact stderr `ERROR label must be 1..15 alnum-or-dash characters`.
+4. Chạy lại `--overflow-test` dưới sanitizer và đối chiếu tiêu chí kiểm chứng chính xác `output-unchanged=123`; không thay bằng phép signed overflow cố tình.
 5. Chạy sanitizer và Valgrind; lưu command, version và exit code.
 6. Viết bảng audit tám dòng: mỗi outline chọn một boundary input khác với worked example, nêu defect bị ngăn và evidence pass/fail. Không viết một phiên bản cố tình gây UB để “chứng minh” defect.
 
-Acceptance: exact oracles, diagnostics sạch, mapping đủ tám mục, không có lời giải implementation hoàn chỉnh trong bài nộp.
+Acceptance: tiêu chí kiểm chứng chính xács, diagnostics sạch, mapping đủ tám mục, không có lời giải implementation hoàn chỉnh trong bài nộp.
 
 ## Provenance của các case
 

@@ -8,7 +8,7 @@
 
 Sau phần tự học, học viên có thể đọc, viết, biên dịch và kiểm tra một chương trình C17 nhỏ dùng kiểu dữ liệu, control flow, hàm, mảng, chuỗi và con trỏ cơ bản; đồng thời phân biệt lỗi compile, lỗi logic và lỗi runtime trước khi vào nội dung con trỏ nâng cao của S01.
 
-- **LO được hỗ trợ:** `ADVC-H1SD` — vai trò prerequisite support; bằng chứng ở mức ôn tập là asset C17 build warning-free và qua hai oracle đầu vào.
+- **LO được hỗ trợ:** `ADVC-H1SD` — vai trò prerequisite support; bằng chứng ở mức ôn tập là asset C17 build warning-free và qua hai tiêu chí kiểm chứng đầu vào.
 - **Readiness increment:** `M00-RDY` — tạo một analyzer sample bounded cùng build/run/debug evidence trước khi nhận ticket M01 của dự án mô phỏng MDB Edge Diagnostics Gateway. Increment này là tùy chọn, không chấm điểm và không thay đổi các ASM hoặc graded milestone hiện có.
 - **Dữ liệu:** toàn bộ sample là synthetic, không chứa dữ liệu thiết bị hoặc khách hàng thật.
 
@@ -32,7 +32,7 @@ Build đạt khi compiler exit `0` và không có warning. Cờ `-O0 -g` giữ l
 
 Một chương trình C nhỏ đi qua chuỗi sau:
 
-`source → compiler kiểm cú pháp/kiểu → executable → input → control flow → hàm → mảng/chuỗi → con trỏ tới dữ liệu → output/exit code → debugger khi oracle sai`
+`source → compiler kiểm cú pháp/kiểu → executable → input → control flow → hàm → mảng/chuỗi → con trỏ tới dữ liệu → output/exit code → debugger khi tiêu chí kiểm chứng sai`
 
 Kiểu dữ liệu quy định cách diễn giải giá trị; control flow chọn đường chạy; hàm tạo contract; scope giới hạn tên và lifetime; mảng giữ các phần tử liên tiếp; chuỗi C là mảng `char` kết thúc bằng `\0`; con trỏ cho phép tham chiếu object có địa chỉ hợp lệ. Compiler và debugger cung cấp bằng chứng khác nhau: compiler bắt một lớp lỗi trước khi chạy, còn GDB giúp quan sát trạng thái của một lần chạy cụ thể.
 
@@ -51,13 +51,13 @@ Kiểu dữ liệu quy định cách diễn giải giá trị; control flow ch�
 
 **Định nghĩa và ranh giới.** Một translation unit C thường gồm chỉ thị tiền xử lý, khai báo kiểu/hàm và định nghĩa hàm; chương trình hosted bắt đầu ở `main`. Kiểu như `int`, `double`, `size_t` xác định miền giá trị và phép toán hợp lệ. Toán tử tạo biểu thức; `if`/`else`, `switch`, `for` và `while` chọn hoặc lặp đường chạy. Khối `{...}` nhóm câu lệnh. Chủ đề này chỉ ôn scalar type, conversion có chủ đích và control flow tuần tự; chưa đi vào bit-field, atomics, macro generic hay undefined behavior nâng cao.
 
-**Vấn đề, vai trò và quyết định.** Khi xử lý danh sách sample, developer phải quyết định kiểu nào biểu diễn số lượng, tổng và trung bình; điều kiện nào từ chối input; vòng lặp dừng ở đâu; exit code nào phân biệt thành công với thất bại. Chọn kiểu hoặc điều kiện sai có thể làm output trông hợp lý nhưng vi phạm oracle. Quyết định đúng là dùng `size_t` cho count/index, giới hạn sample trước khi chuyển từ `long` sang `int`, và tách nhánh lỗi khỏi nhánh in kết quả.
+**Vấn đề, vai trò và quyết định.** Khi xử lý danh sách sample, developer phải quyết định kiểu nào biểu diễn số lượng, tổng và trung bình; điều kiện nào từ chối input; vòng lặp dừng ở đâu; exit code nào phân biệt thành công với thất bại. Chọn kiểu hoặc điều kiện sai có thể làm output trông hợp lý nhưng vi phạm tiêu chí kiểm chứng. Quyết định đúng là dùng `size_t` cho count/index, giới hạn sample trước khi chuyển từ `long` sang `int`, và tách nhánh lỗi khỏi nhánh in kết quả.
 
 **Cơ chế và mental model.** Compiler kiểm biểu thức theo type; promotion/conversion có thể đổi miền giá trị. `=` gán, còn `==` so sánh. `&&` và `||` đánh giá từ trái sang phải và short-circuit, nên điều kiện bảo vệ phải đứng trước phép dùng dữ liệu. Vòng `for (index = 0U; index < count; ++index)` duyệt đúng các chỉ số hợp lệ `0..count-1`. `return` từ `main` truyền status cho shell; stdout dành cho kết quả bình thường, stderr dành cho chẩn đoán.
 
 **Khi dùng, khi không dùng và trade-off.** Dùng `if` khi điều kiện không phải một tập giá trị rời rạc đơn giản; dùng `switch` khi dispatch trên tập hằng số nguyên rõ ràng; dùng `for` khi init/condition/update tạo một invariant duyệt; dùng `while` khi số vòng phụ thuộc dữ liệu. Không dùng một biểu thức quá nhiều side effect để rút ngắn code vì thứ tự đánh giá dễ bị hiểu sai. Không chọn `double` cho mọi dữ liệu chỉ để tránh nghĩ về integer division; hãy giữ count/sample ở integer và cast rõ tại phép tính trung bình.
 
-**Ví dụ nghề nghiệp có oracle riêng.** Reviewer cần tóm tắt bốn sample synthetic `18,21,24,30`, mỗi sample phải nằm trong `[-50,150]`, tối đa tám phần tử. Developer dùng `size_t` cho count/index, `int` cho sample và total đã được giới hạn, `double` cho mean; vòng lặp cập nhật min/max/total. Artifact là [basic_refresher_demo.c](assets/basic_refresher_demo.c). Kết quả mong đợi là `count=4`, `min=18`, `max=30`, `mean=23.25`. Oracle: build không warning, process exit `0`, stdout chính xác `OK count=4 min=18 max=30 mean=23.25`.
+**Ví dụ nghề nghiệp có tiêu chí kiểm chứng riêng.** Reviewer cần tóm tắt bốn sample synthetic `18,21,24,30`, mỗi sample phải nằm trong `[-50,150]`, tối đa tám phần tử. Developer dùng `size_t` cho count/index, `int` cho sample và total đã được giới hạn, `double` cho mean; vòng lặp cập nhật min/max/total. Artifact là [basic_refresher_demo.c](assets/basic_refresher_demo.c). Kết quả mong đợi là `count=4`, `min=18`, `max=30`, `mean=23.25`. tiêu chí kiểm chứng: build không warning, process exit `0`, stdout chính xác `OK count=4 min=18 max=30 mean=23.25`.
 
 ##### Ví dụ code cụ thể — kiểu dữ liệu và vòng lặp có biên
 
@@ -83,7 +83,7 @@ int main(void)
 }
 ```
 
-Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_flow.c -o /tmp/b00_flow && /tmp/b00_flow`. Oracle là exit `0`, không có warning và stdout đúng `count=3 total=57 mean=19.00`. `index < count` giữ truy cập trong mảng; hai cast sang `double` ngăn integer division làm mất phần thập phân.
+Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_flow.c -o /tmp/b00_flow && /tmp/b00_flow`. tiêu chí kiểm chứng là exit `0`, không có warning và stdout đúng `count=3 total=57 mean=19.00`. `index < count` giữ truy cập trong mảng; hai cast sang `double` ngăn integer division làm mất phần thập phân.
 
 **Best practices.**
 
@@ -105,7 +105,7 @@ Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_flow.c -o /tmp/b0
 
 **Khi dùng, khi không dùng và trade-off.** Tách hàm khi có contract có thể đặt tên, tái sử dụng hoặc kiểm riêng; giữ inline logic rất nhỏ khi tách ra chỉ làm che luồng. Dùng output pointer khi cần vừa trả status vừa trả dữ liệu, nhưng phải nêu null policy và output-on-failure. Không trả địa chỉ của biến automatic local; object đó hết lifetime sau `return`. `static` helper giảm namespace và coupling, đổi lại không thể gọi trực tiếp từ translation unit test khác nếu không test qua public behavior.
 
-**Ví dụ nghề nghiệp có oracle riêng.** Input `18,xx,24` đến parser của tool preflight. Constraint là không cập nhật count thành công một phần và không gọi summarizer với dữ liệu lỗi. `parse_samples` đặt `*out_count = 0U`, phát hiện `end == cursor` ở `xx`, trả `0`; `main` in lỗi và dừng. Artifact là cùng executable nhưng oracle riêng cho contract hàm: exit `2`, stdout rỗng, stderr chính xác `ERROR invalid sample list`. Bằng chứng này chứng minh error path được truyền qua return value thay vì caller dùng output chưa hợp lệ.
+**Ví dụ nghề nghiệp có tiêu chí kiểm chứng riêng.** Input `18,xx,24` đến parser của tool preflight. Constraint là không cập nhật count thành công một phần và không gọi summarizer với dữ liệu lỗi. `parse_samples` đặt `*out_count = 0U`, phát hiện `end == cursor` ở `xx`, trả `0`; `main` in lỗi và dừng. Artifact là cùng executable nhưng tiêu chí kiểm chứng riêng cho contract hàm: exit `2`, stdout rỗng, stderr chính xác `ERROR invalid sample list`. Bằng chứng này chứng minh error path được truyền qua return value thay vì caller dùng output chưa hợp lệ.
 
 ##### Ví dụ code cụ thể — prototype và output parameter
 
@@ -139,7 +139,7 @@ int main(void)
 }
 ```
 
-Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_function.c -o /tmp/b00_function && /tmp/b00_function`. Oracle là exit `0` và stdout đúng `status=ok total=63`. `values` là input-only nhờ `const`; `out_total` là output có precondition rõ; `static` giữ helper trong translation unit này.
+Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_function.c -o /tmp/b00_function && /tmp/b00_function`. tiêu chí kiểm chứng là exit `0` và stdout đúng `status=ok total=63`. `values` là input-only nhờ `const`; `out_total` là output có precondition rõ; `static` giữ helper trong translation unit này.
 
 **Best practices.**
 
@@ -148,7 +148,7 @@ Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_function.c -o /tm
 - **Rule:** giữ helper private bằng `static` khi không phải public API. **Rationale:** internal linkage tránh collision và giảm surface cần duy trì. **Positive:** `static int parse_samples(...)`. **Negative/hậu quả:** helper external không cần thiết có thể trùng symbol khi dự án lớn lên.
 - **Rule:** không trả pointer tới automatic local. **Rationale:** lifetime kết thúc khi hàm trả về. **Positive:** chép scalar local qua output pointer hợp lệ của caller. **Negative/hậu quả:** trả `&total` tạo dangling pointer và use-after-return.
 
-**Failure và troubleshooting.** Dấu hiệu linker báo `multiple definition` có thể do helper không `static` được định nghĩa ở nhiều file: xem symbol/file trong linker output, chuyển implementation private vào một file và dùng internal linkage. Dấu hiệu caller thấy count cũ do truyền `sample_count` thay vì `&sample_count`: compiler sẽ báo type mismatch nếu prototype đúng; sửa call và không cast để che lỗi. Dấu hiệu dữ liệu thay đổi sau hàm lỗi do mutation trước validation: đặt watchpoint lên output, xác định lần ghi đầu, chuyển validation lên trước và đặt output-on-error rõ; phòng tránh bằng invalid-input oracle.
+**Failure và troubleshooting.** Dấu hiệu linker báo `multiple definition` có thể do helper không `static` được định nghĩa ở nhiều file: xem symbol/file trong linker output, chuyển implementation private vào một file và dùng internal linkage. Dấu hiệu caller thấy count cũ do truyền `sample_count` thay vì `&sample_count`: compiler sẽ báo type mismatch nếu prototype đúng; sửa call và không cast để che lỗi. Dấu hiệu dữ liệu thay đổi sau hàm lỗi do mutation trước validation: đặt watchpoint lên output, xác định lần ghi đầu, chuyển validation lên trước và đặt output-on-error rõ; phòng tránh bằng invalid-input tiêu chí kiểm chứng.
 
 #### OUT-B00-03 — Mảng, chuỗi ký tự và thao tác dữ liệu có giới hạn
 
@@ -162,7 +162,7 @@ Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_function.c -o /tm
 
 **Khi dùng, khi không dùng và trade-off.** Mảng fixed-capacity phù hợp fixture nhỏ có giới hạn rõ và tránh allocation trong bài ôn tập. Không phù hợp input không giới hạn hoặc cần tăng trưởng; khi đó phải có bounded policy hoặc cấu trúc động được dạy sau. Dùng string library khi contract length/capacity được biết; không dùng `strlen` hay copy trên buffer chưa chứng minh có `\0`. Không dùng `sizeof(pointer) / sizeof(pointer[0])` trong callee để tìm số phần tử.
 
-**Ví dụ nghề nghiệp có oracle riêng.** Tool nhận `-5,0,150`, ba sample synthetic nằm đúng biên cho phép. Input text null-terminated, output buffer capacity tám. Parser quyết định chấp nhận dấu âm, từ chối whitespace hoặc hậu tố không được toàn bộ token tiêu thụ, và trả count ba. Artifact là `samples` cùng `sample_count`; kết quả mong đợi `OK count=3 min=-5 max=150 mean=48.33`. Oracle riêng: exit `0` và stdout khớp; ca `1,2,3,4,5,6,7,8,9` phải exit `2` và không ghi phần tử thứ chín.
+**Ví dụ nghề nghiệp có tiêu chí kiểm chứng riêng.** Tool nhận `-5,0,150`, ba sample synthetic nằm đúng biên cho phép. Input text null-terminated, output buffer capacity tám. Parser quyết định chấp nhận dấu âm, từ chối whitespace hoặc hậu tố không được toàn bộ token tiêu thụ, và trả count ba. Artifact là `samples` cùng `sample_count`; kết quả mong đợi `OK count=3 min=-5 max=150 mean=48.33`. tiêu chí kiểm chứng riêng: exit `0` và stdout khớp; ca `1,2,3,4,5,6,7,8,9` phải exit `2` và không ghi phần tử thứ chín.
 
 ##### Ví dụ code cụ thể — sao chép chuỗi có capacity
 
@@ -193,7 +193,7 @@ int main(void)
 }
 ```
 
-Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_array_string.c -o /tmp/b00_array_string && /tmp/b00_array_string`. Oracle là exit `0` và stdout đúng `label=READY rejected=1`. Kiểm `length + 1U` tính cả `\0`; nhánh quá dài trả lỗi trước `memcpy`, nên buffer vẫn chứa chuỗi hợp lệ trước đó.
+Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_array_string.c -o /tmp/b00_array_string && /tmp/b00_array_string`. tiêu chí kiểm chứng là exit `0` và stdout đúng `label=READY rejected=1`. Kiểm `length + 1U` tính cả `\0`; nhánh quá dài trả lỗi trước `memcpy`, nên buffer vẫn chứa chuỗi hợp lệ trước đó.
 
 **Best practices.**
 
@@ -210,13 +210,13 @@ Chạy `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror /tmp/b00_array_string.c -o
 
 **Định nghĩa và ranh giới.** Con trỏ object có kiểu lưu địa chỉ của object phù hợp hoặc null; `&object` lấy địa chỉ, `*pointer` truy cập object được trỏ tới khi pointer hợp lệ. `pointer->member` là cách viết gọn của `(*pointer).member`. Pointer không tự mang ownership, lifetime, bounds hay nullability. Biên dịch chuyển source thành executable và có thể dừng ở lỗi cú pháp/kiểu/link; debugging quan sát một execution để tìm nơi actual state lệch expected state. Chủ đề này chỉ ôn address/dereference, null check và output pointer; pointer arithmetic nâng cao, pointer-to-pointer, function pointer, aliasing và ownership động thuộc các session sau.
 
-**Vấn đề, vai trò và quyết định.** Hai helper cần ghi kết quả vào object của caller nhưng vẫn trả status. Developer quyết định khi nào pointer được phép null, object phải sống bao lâu, callee được đọc hay ghi, và evidence nào tách compile failure, invalid-input behavior và logic failure. Asset truyền `&sample_count`, `&minimum`, `&maximum`, `&total`; callee kiểm null trước `*out...`; compiler warning là gate, còn GDB được dùng khi oracle output/exit code không khớp.
+**Vấn đề, vai trò và quyết định.** Hai helper cần ghi kết quả vào object của caller nhưng vẫn trả status. Developer quyết định khi nào pointer được phép null, object phải sống bao lâu, callee được đọc hay ghi, và evidence nào tách compile failure, invalid-input behavior và logic failure. Asset truyền `&sample_count`, `&minimum`, `&maximum`, `&total`; callee kiểm null trước `*out...`; compiler warning là gate, còn GDB được dùng khi tiêu chí kiểm chứng output/exit code không khớp.
 
-**Cơ chế và mental model.** `sample_count` là object trong `main`; `&sample_count` trỏ tới object đó trong suốt lần gọi. Parameter `out_count` là bản sao của địa chỉ; `*out_count = count` thay đổi object gốc. `const int *values` cho phép đọc các phần tử nhưng không sửa chúng qua pointer đó. Quy trình debug có vòng lặp: tái hiện bằng input nhỏ → ghi expected/actual → build `-O0 -g` → breakpoint gần lần sai đầu tiên → xem arguments/locals/control flow → sửa nguyên nhân → rebuild sạch → chạy lại cả happy và invalid oracle.
+**Cơ chế và mental model.** `sample_count` là object trong `main`; `&sample_count` trỏ tới object đó trong suốt lần gọi. Parameter `out_count` là bản sao của địa chỉ; `*out_count = count` thay đổi object gốc. `const int *values` cho phép đọc các phần tử nhưng không sửa chúng qua pointer đó. Quy trình debug có vòng lặp: tái hiện bằng input nhỏ → ghi expected/actual → build `-O0 -g` → breakpoint gần lần sai đầu tiên → xem arguments/locals/control flow → sửa nguyên nhân → rebuild sạch → chạy lại cả happy và invalid tiêu chí kiểm chứng.
 
 **Khi dùng, khi không dùng và trade-off.** Dùng pointer khi cần tham chiếu object của caller, xử lý mảng hoặc biểu diễn optional/null theo contract. Không dereference trước null/lifetime/bounds check; không giữ địa chỉ của automatic local sau khi lifetime kết thúc. Dùng compiler trước vì type/warning evidence rẻ và xác định; dùng GDB khi executable chạy nhưng state/control flow sai hoặc crash. Debugger không chứng minh absence of memory bugs, và một lần chạy pass không thay thế boundary fixtures hay sanitizer ở S01.
 
-**Ví dụ nghề nghiệp có oracle riêng.** Ca hợp lệ truyền địa chỉ buffer/count/minimum/maximum/total qua các helper; ca lỗi `18,xx,24` làm `strtol` không tiến tại `xx`. Developer build warning-free, chạy lại lỗi, đặt breakpoint tại `parse_samples`, quan sát `cursor`, `end`, `errno` và return path. Artifact là executable debug cùng command log. Expected: happy exit `0`/stdout đúng; invalid exit `2`/stderr đúng. Oracle tổng hợp:
+**Ví dụ nghề nghiệp có tiêu chí kiểm chứng riêng.** Ca hợp lệ truyền địa chỉ buffer/count/minimum/maximum/total qua các helper; ca lỗi `18,xx,24` làm `strtol` không tiến tại `xx`. Developer build warning-free, chạy lại lỗi, đặt breakpoint tại `parse_samples`, quan sát `cursor`, `end`, `errno` và return path. Artifact là executable debug cùng command log. Expected: happy exit `0`/stdout đúng; invalid exit `2`/stderr đúng. tiêu chí kiểm chứng tổng hợp:
 
 ```bash
 /tmp/basic_refresher_demo '18,21,24,30'
@@ -255,7 +255,7 @@ int main(void)
 }
 ```
 
-Build và chạy bằng `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O0 -g /tmp/b00_pointer.c -o /tmp/b00_pointer && /tmp/b00_pointer`; oracle là exit `0` và stdout `scaled=42`. Để nhìn pointee trước phép ghi, chạy `gdb -q -batch -ex 'break scale_reading' -ex run -ex 'print *input' -ex continue /tmp/b00_pointer`; bằng chứng cần có `$1 = 21`, rồi chương trình thoát bình thường. `const int *input` chặn ghi qua input pointer, còn null check đứng trước cả hai lần dereference.
+Build và chạy bằng `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O0 -g /tmp/b00_pointer.c -o /tmp/b00_pointer && /tmp/b00_pointer`; tiêu chí kiểm chứng là exit `0` và stdout `scaled=42`. Để nhìn pointee trước phép ghi, chạy `gdb -q -batch -ex 'break scale_reading' -ex run -ex 'print *input' -ex continue /tmp/b00_pointer`; bằng chứng cần có `$1 = 21`, rồi chương trình thoát bình thường. `const int *input` chặn ghi qua input pointer, còn null check đứng trước cả hai lần dereference.
 
 **Best practices.**
 
@@ -264,7 +264,7 @@ Build và chạy bằng `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O0 -g /t
 - **Rule:** coi warning là failure và không cast để che mismatch. **Rationale:** warning type/format thường là bằng chứng sớm của UB hoặc output sai. **Positive:** sửa declaration/format đúng loại. **Negative/hậu quả:** ép cast làm build xanh nhưng pointer vẫn trỏ sai kiểu.
 - **Rule:** debug từ lần state lệch đầu tiên, không từ nơi crash cuối. **Rationale:** crash thường là hậu quả muộn của dữ liệu đã hỏng. **Positive:** breakpoint ở parser ngay token lỗi và xem `end == cursor`. **Negative/hậu quả:** chỉ nhìn stack frame cuối rồi thêm null check ngẫu nhiên có thể che nguyên nhân.
 
-**Failure và troubleshooting.** Dấu hiệu compiler báo incompatible pointer type: đọc cả expected/actual type, sửa prototype/call; không cast. Dấu hiệu GDB in “Cannot access memory” khi dereference: xem pointer value, stack frame và lifetime, quay lại nơi pointer được tạo; sửa ownership/lifetime hoặc precondition. Dấu hiệu invalid input vẫn exit `0`: kiểm return value ở `main` và `$?`, đặt breakpoint tại nhánh lỗi, trả exit code khác zero; phòng tránh bằng script/oracle kiểm cả stream lẫn exit code.
+**Failure và troubleshooting.** Dấu hiệu compiler báo incompatible pointer type: đọc cả expected/actual type, sửa prototype/call; không cast. Dấu hiệu GDB in “Cannot access memory” khi dereference: xem pointer value, stack frame và lifetime, quay lại nơi pointer được tạo; sửa ownership/lifetime hoặc precondition. Dấu hiệu invalid input vẫn exit `0`: kiểm return value ở `main` và `$?`, đặt breakpoint tại nhánh lỗi, trả exit code khác zero; phòng tránh bằng script/tiêu chí kiểm chứng kiểm cả stream lẫn exit code.
 
 ## Ví dụ tích hợp và cách tự kiểm
 
@@ -275,7 +275,7 @@ Ví dụ đầy đủ ở [example.md](example.md) và source tại [basic_refre
 /tmp/basic_refresher_demo '18,xx,24'; test "$?" -eq 2
 ```
 
-Chỉ coi readiness increment `M00-RDY` đạt khi build warning-free, happy oracle đúng, invalid oracle đúng stream và exit code. Nếu chưa đạt, dùng GDB theo workflow ở `OUT-B00-04` rồi chạy lại cả hai ca để tránh regression.
+Chỉ coi readiness increment `M00-RDY` đạt khi build warning-free, tiêu chí kiểm chứng cho trường hợp hợp lệ đúng, invalid tiêu chí kiểm chứng đúng stream và exit code. Nếu chưa đạt, dùng GDB theo workflow ở `OUT-B00-04` rồi chạy lại cả hai ca để tránh regression.
 
 ## Thuật ngữ nhanh
 
@@ -284,7 +284,7 @@ Chỉ coi readiness increment `M00-RDY` đạt khi build warning-free, happy ora
 - **Array length / capacity:** số phần tử đang có ý nghĩa / số phần tử storage chứa được.
 - **Null-terminated string:** dãy `char` có `\0` trong vùng hợp lệ.
 - **Pointer / pointee:** giá trị địa chỉ / object được địa chỉ đó tham chiếu.
-- **Oracle:** kết quả quan sát được dùng quyết định pass/fail, gồm output, exit code và warning/finding.
+- **tiêu chí kiểm chứng:** kết quả quan sát được dùng quyết định pass/fail, gồm output, exit code và warning/finding.
 
 ## 7. Nguồn tham khảo và provenance phần bổ sung
 
@@ -305,4 +305,4 @@ Các mô tả kỹ thuật là bản diễn giải nguyên gốc cho khóa; asse
 
 ## Học tiếp
 
-Khi hai oracle của `M00-RDY` đều đạt, chuyển sang [S01 — Kick-off and advanced pointers](../../Phan_1_Unit_01__Advanced_Pointers__Memory_Management/Session_1_S01_Session_01__Kick-off_and_advanced_pointers/material.md).
+Khi hai tiêu chí kiểm chứng của `M00-RDY` đều đạt, chuyển sang [S01 — Kick-off and advanced pointers](../../Phan_1_Unit_01__Advanced_Pointers__Memory_Management/Session_1_S01_Session_01__Kick-off_and_advanced_pointers/material.md).

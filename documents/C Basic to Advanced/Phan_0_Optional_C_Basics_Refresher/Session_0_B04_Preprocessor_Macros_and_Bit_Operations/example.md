@@ -47,7 +47,7 @@
 
 Set/clear chỉ đổi bit thuộc mask. Negative path snapshot state và tự kiểm rejected write không đổi image trước khi phát lỗi nghiệp vụ.
 
-## 5. Build và happy-path oracle
+## 5. Build và happy-path tiêu chí kiểm chứng
 
 Chạy từ thư mục Unit B04:
 
@@ -67,7 +67,7 @@ test "$(cat happy.out)" = "$(printf '%s\n' \
   'self-test=PASS')"
 ```
 
-**Oracle:** compile exit `0` và zero warnings; chương trình exit `0`; stderr rỗng; stdout chính xác sáu dòng:
+**tiêu chí kiểm chứng:** compile exit `0` và zero warnings; chương trình exit `0`; stderr rỗng; stdout chính xác sáu dòng:
 
 ```text
 config=portable_c17
@@ -86,7 +86,7 @@ gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2 \
 test "$(./b04_training --self-test | head -n1)" = 'config=training'
 ```
 
-## 6. Negative-path oracle
+## 6. Negative-path tiêu chí kiểm chứng
 
 ```bash
 set +e
@@ -99,7 +99,7 @@ test "$(cat negative.err)" = \
   'error: mode value 8 does not fit mask 0x00000070'
 ```
 
-**Oracle:** exit `2`; stdout đúng `0` byte; stderr chính xác:
+**tiêu chí kiểm chứng:** exit `2`; stdout đúng `0` byte; stderr chính xác:
 
 ```text
 error: mode value 8 does not fit mask 0x00000070
@@ -116,7 +116,7 @@ Lỗi usage là contract khác: không argv hoặc argv lạ phải exit `64` v�
 
 | Dấu hiệu | Nguyên nhân | Bằng chứng | Fix/prevent |
 |---|---|---|---|
-| mode 8 trở thành 0 | mask cắt bit cao | negative oracle không còn exit 2 | range-check trước shift/mask |
+| mode 8 trở thành 0 | mask cắt bit cao | tiêu chí kiểm chứng cho trường hợp lỗi không còn exit 2 | range-check trước shift/mask |
 | bit ENABLE mất khi ghi MODE | overwrite cả word | expected `0x55`, actual `0x50` | read-modify-write |
 | side effect chạy hai lần | macro runtime lặp argument | preprocessed output | đổi thành `static inline`/hàm |
 | build C11 vẫn qua | thiếu guard/dialect | compile command `-std=c11` | giữ `#error` và profile C17 |
@@ -127,7 +127,7 @@ Mở rộng một bản sao của demo bằng trường `RATE` ở bits 8..11 v�
 
 - **Input mới:** image ban đầu `0x00000001`; ghi RATE=`10`; set LOCKED; đọc lại RATE; sau đó thử RATE=`16`.
 - **Constraint:** không đổi code gốc trong `assets`; tạo file scratch; không địa chỉ thiết bị; invalid write giữ nguyên state; không dùng macro evaluate argument nhiều lần.
-- **Happy oracle chính xác:** stdout của scratch phải là:
+- **tiêu chí kiểm chứng cho trường hợp hợp lệ chính xác:** stdout của scratch phải là:
 
 ```text
 after_rate=0x00000A01 rate=10
@@ -135,8 +135,8 @@ after_lock=0x00008A01 locked=1
 practice=PASS
 ```
 
-- **Negative oracle:** RATE=`16` phải exit `2`, stdout rỗng, stderr chính xác `error: rate value 16 does not fit mask 0x00000F00`; image vẫn `0x00008A01` theo assertion nội bộ.
-- **Build oracle:** `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2` exit `0`, không warning.
+- **tiêu chí kiểm chứng cho trường hợp lỗi:** RATE=`16` phải exit `2`, stdout rỗng, stderr chính xác `error: rate value 16 does not fit mask 0x00000F00`; image vẫn `0x00008A01` theo assertion nội bộ.
+- **Build tiêu chí kiểm chứng:** `gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2` exit `0`, không warning.
 
 Không có skeleton hay implementation mẫu; mục tiêu là chuyển giao quy tắc validate-then-commit sang mask mới.
 
@@ -147,4 +147,4 @@ Không có skeleton hay implementation mẫu; mục tiêu là chuyển giao quy 
 - [SEI CERT C Coding Standard](https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/), Carnegie Mellon University Software Engineering Institute, snapshot online, truy cập 2026-08-22; PRE/EXP/INT guidance.
 - [GCC 11.4 manuals](https://gcc.gnu.org/onlinedocs/gcc-11.4.0/), GNU Project/Free Software Foundation, version 11.4.0, truy cập 2026-08-22; C dialect, preprocessor và warning options.
 
-`[BỔ SUNG — nguồn: các nguồn trên]` Case, fixture và oracles là dữ liệu synthetic được biên soạn mới; không sao chép code từ chuẩn/tài liệu.
+`[BỔ SUNG — nguồn: các nguồn trên]` Case, fixture và tiêu chí kiểm chứngs là dữ liệu synthetic được biên soạn mới; không sao chép code từ chuẩn/tài liệu.

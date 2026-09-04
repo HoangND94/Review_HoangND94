@@ -49,7 +49,7 @@ Con trỏ không tự mang thông tin “còn sống”, “có bao nhiêu phầ
 
 **Khi dùng / không dùng / trade-off.** Dùng pointer khi API cần tham chiếu object, output parameter hoặc dãy kèm length. Dùng giá trị trực tiếp khi copy nhỏ và không cần chia sẻ mutation. Pointer tránh copy nhưng tăng yêu cầu về lifetime, aliasing và null policy.
 
-**Ví dụ cụ thể và oracle.** Với `int reading = 41; int *target = &reading; *target += 1;`, artifact là state của `reading`; oracle là `reading == 42` và `target == &reading`. Nếu đổi `target` sang `NULL`, nhánh phải từ chối trước dereference thay vì crash.
+**Ví dụ cụ thể và tiêu chí kiểm chứng.** Với `int reading = 41; int *target = &reading; *target += 1;`, artifact là state của `reading`; tiêu chí kiểm chứng là `reading == 42` và `target == &reading`. Nếu đổi `target` sang `NULL`, nhánh phải từ chối trước dereference thay vì crash.
 
 **Best practice.** **Rule:** khởi tạo pointer ngay khi khai báo và ghi rõ null/ownership contract. **Rationale:** giảm trạng thái indeterminate và giúp reviewer kiểm lifetime. **Positive:** `const int *view = samples;` kèm `count`. **Negative:** `int *p; *p = 7;` dereference giá trị indeterminate, hành vi không xác định.
 
@@ -67,7 +67,7 @@ Con trỏ không tự mang thông tin “còn sống”, “có bao nhiêu phầ
 
 **Khi dùng / không dùng / trade-off.** Null là trạng thái hợp lệ chỉ khi API công bố và caller xử lý được. Không dùng sentinel pointer mơ hồ khi enum status hoặc length diễn đạt rõ hơn. Defensive check tăng nhánh nhưng đổi lại error path xác định.
 
-**Ví dụ cụ thể và oracle.** Hàm `write_if_present(int *out, int value)` trả `0` khi `out == NULL`, không ghi memory; với `int x = 0`, gọi `write_if_present(&x, 9)` trả `1` và `x == 9`. Hai oracle phân biệt expected rejection với crash.
+**Ví dụ cụ thể và tiêu chí kiểm chứng.** Hàm `write_if_present(int *out, int value)` trả `0` khi `out == NULL`, không ghi memory; với `int x = 0`, gọi `write_if_present(&x, 9)` trả `1` và `x == 9`. Hai tiêu chí kiểm chứng phân biệt expected rejection với crash.
 
 **Best practice.** **Rule:** validate pointer trước lần dereference đầu và invalidate pointer sở hữu sau `free`. **Rationale:** lỗi được chặn ở boundary và tránh reuse vô tình. **Positive:** `free(buffer); buffer = NULL;`. **Negative:** giữ alias rồi đọc qua alias sau free; gán riêng owner về null không cứu alias dangling.
 
@@ -85,7 +85,7 @@ Con trỏ không tự mang thông tin “còn sống”, “có bao nhiêu phầ
 
 **Khi dùng / không dùng / trade-off.** Dùng view `const T *data, size_t count` cho dãy borrowed. Dùng struct chứa pointer+length nếu cặp này đi qua nhiều tầng. Không dùng pointer arithmetic giữa hai allocation khác nhau; abstraction rõ hơn làm API dài hơn nhưng giảm defect.
 
-**Ví dụ cụ thể và oracle.** Với `int data[] = {2, 4, 6};` và hàm `sum(data, 3U)`, output phải là `12`; gọi với count `4` vi phạm contract dù binary có thể chưa crash. Artifact kiểm chứng là test boundary `count=0`, `count=3`, không phải quan sát tình cờ.
+**Ví dụ cụ thể và tiêu chí kiểm chứng.** Với `int data[] = {2, 4, 6};` và hàm `sum(data, 3U)`, output phải là `12`; gọi với count `4` vi phạm contract dù binary có thể chưa crash. Artifact kiểm chứng là test boundary `count=0`, `count=3`, không phải quan sát tình cờ.
 
 **Best practice.** **Rule:** truyền pointer cùng extent và giữ arithmetic trong `[begin, end]`. **Rationale:** pointer không mang capacity. **Positive:** loop `index < count`. **Negative:** `sizeof(parameter) / sizeof(parameter[0])` trong hàm trả tỷ lệ kích thước pointer, dẫn tới đọc sai biên.
 
@@ -103,7 +103,7 @@ Con trỏ không tự mang thông tin “còn sống”, “có bao nhiêu phầ
 
 **Khi dùng / không dùng / trade-off.** Dùng cho strategy table, comparator, visitor và callback đồng bộ. Không dùng khi một `switch` nhỏ rõ hơn hoặc lifetime context khó bảo đảm. Dispatch gián tiếp tăng mở rộng nhưng có thể khó trace và cản inline; correctness ưu tiên trước micro-optimization.
 
-**Ví dụ cụ thể và oracle.** Hai function `add(a,b)` và `maximum(a,b)` cùng signature `int(int,int)` được chọn qua table. Input `(4,7)` cho oracle `add=11`, `max=7`; gán function nhận `double` phải bị compiler từ chối, không cast.
+**Ví dụ cụ thể và tiêu chí kiểm chứng.** Hai function `add(a,b)` và `maximum(a,b)` cùng signature `int(int,int)` được chọn qua table. Input `(4,7)` cho tiêu chí kiểm chứng `add=11`, `max=7`; gán function nhận `double` phải bị compiler từ chối, không cast.
 
 **Best practice.** **Rule:** dùng `typedef`, không cast function pointer và kiểm pointer khác null trước gọi. **Rationale:** signature là contract ABI/type. **Positive:** `value_predicate predicate = at_least_threshold;`. **Negative:** cast `void (*)(void)` sang signature khác có thể làm sai cách truyền/đọc tham số.
 
@@ -121,7 +121,7 @@ Con trỏ không tự mang thông tin “còn sống”, “có bao nhiêu phầ
 
 **Khi dùng / không dùng / trade-off.** Dùng callback để tách traversal khỏi policy. Không dùng callback giữ địa chỉ stack sau return hoặc callback bí mật sửa global. Context làm API verbose hơn nhưng cho phép nhiều instance độc lập và test xác định.
 
-**Ví dụ cụ thể và oracle.** Asset chạy threshold `8` với `3,8,13,5`; callback chọn `8,13`, output chính xác `OK threshold=8 selected=2 sum=21 first=8`. Input `3,x,13` bị parser từ chối trước callback với `ERROR invalid integer list`. Input `3, 8,13` bị pre-check whitespace từ chối, exit `2`, stdout rỗng, exact stderr `ERROR whitespace is not allowed`; `strtol` không được phép âm thầm chấp nhận khoảng trắng.
+**Ví dụ cụ thể và tiêu chí kiểm chứng.** Asset chạy threshold `8` với `3,8,13,5`; callback chọn `8,13`, output chính xác `OK threshold=8 selected=2 sum=21 first=8`. Input `3,x,13` bị parser từ chối trước callback với `ERROR invalid integer list`. Input `3, 8,13` bị pre-check whitespace từ chối, exit `2`, stdout rỗng, exact stderr `ERROR whitespace is not allowed`; `strtol` không được phép âm thầm chấp nhận khoảng trắng.
 
 **Best practice.** **Rule:** callback nhận typed/opaque context với lifetime công bố; output pointer đặt null trước khi làm việc và commit atomically. **Rationale:** tránh global state và partial ownership. **Positive:** `*out_summary = NULL` rồi gán sau `snprintf` thành công. **Negative:** gán output sớm, thất bại sau đó khiến caller không biết có phải free hay không.
 
@@ -179,4 +179,4 @@ test "$(cat /tmp/b07_space.err)" = 'ERROR whitespace is not allowed'
 - `SRC-C17-WG14`: [WG14 N2176 public committee draft](https://www.open-std.org/jtc1/sc22/wg14/www/docs/n2176.pdf), dùng để đối chiếu khái niệm, không thay bản chuẩn cuối.
 - `SRC-CERTC`: [SEI CERT C Coding Standard](https://cmu-sei.github.io/secure-coding-standards/sei-cert-c-coding-standard/), dùng làm tham chiếu defensive contract.
 
-**[BỔ SUNG — nguồn: `SRC-USER-CREF`]** Scenario record-tool, fixture và oracle là dữ liệu mô phỏng phục vụ học tập; không đại diện hệ thống khách hàng thật.
+**[BỔ SUNG — nguồn: `SRC-USER-CREF`]** Scenario record-tool, fixture và tiêu chí kiểm chứng là dữ liệu mô phỏng phục vụ học tập; không đại diện hệ thống khách hàng thật.

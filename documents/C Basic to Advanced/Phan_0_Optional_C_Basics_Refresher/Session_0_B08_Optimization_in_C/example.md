@@ -36,7 +36,7 @@ Case đạt khi:
 3. Cả hai nhận `0` đều exit `2`, stdout rỗng, stderr đúng một dòng `ERROR item-count must be 1..1000000`.
 4. Linker MAP không rỗng; profile report nhận diện được workload, nhưng không dùng một con số timing đơn lẻ để tuyên bố speedup phổ quát.
 5. Sanitizer build không phát diagnostic với fixture hợp lệ.
-6. GCC decision evidence có oracle bounded cho IRA register assignment/live ranges, post-reload scheduling, LIM, unroll decision và IV strength-reduction analysis; kết luận chỉ mô tả điều report thực sự cho thấy.
+6. GCC decision evidence có tiêu chí kiểm chứng bounded cho IRA register assignment/live ranges, post-reload scheduling, LIM, unroll decision và IV strength-reduction analysis; kết luận chỉ mô tả điều report thực sự cho thấy.
 
 ### 2. Input, trạng thái ban đầu và ràng buộc
 
@@ -67,7 +67,7 @@ test -s b08_O0.map
 test -s b08_O2.map
 ```
 
-Oracle stdout của cả ba build:
+tiêu chí kiểm chứng stdout của cả ba build:
 
 ```text
 OK n=1000 checksum=7BD0A72C
@@ -142,7 +142,7 @@ grep -Eq 'lea[lq]?' mix_value.s
 cd ..
 ```
 
-Oracle cố ý kiểm **loại evidence và file không rỗng**, không khóa tên register, số basic block, cost number hay toàn bộ assembly. Những chi tiết đó có thể đổi khi compiler/target đổi; baseline/version phải đi kèm report.
+tiêu chí kiểm chứng cố ý kiểm **loại evidence và file không rỗng**, không khóa tên register, số basic block, cost number hay toàn bộ assembly. Những chi tiết đó có thể đổi khi compiler/target đổi; baseline/version phải đi kèm report.
 
 | Outline | Evidence GCC 11.4 quan sát được | Giới hạn diễn giải |
 |---|---|---|
@@ -153,13 +153,13 @@ Oracle cố ý kiểm **loại evidence và file không rỗng**, không khóa t
 | `OUT-B08-13` | CUNROLL report ghi `Not unrolling loop` trên workload động | đây là quyết định **không unroll**, không được viết thành “unrolling đã tăng tốc” |
 | `OUT-B08-14` | IVOPTS có candidates/cost; x86-64 baseline assembly dùng shift `4` + `lea` cho `index*17+3` | transformation target-specific; correctness vẫn là checksum O0/O2 |
 
-Report `b08.opt` đồng thời cho thấy quyết định inline/missed-inline (`OUT-B08-09`). Nếu một pattern không xuất hiện ở compiler/target khác, kết quả là “evidence profile khác”, không phải lý do nới oracle bằng một tuyên bố không quan sát được.
+Report `b08.opt` đồng thời cho thấy quyết định inline/missed-inline (`OUT-B08-09`). Nếu một pattern không xuất hiện ở compiler/target khác, kết quả là “evidence profile khác”, không phải lý do nới tiêu chí kiểm chứng bằng một tuyên bố không quan sát được.
 
 ### 4. Phân tích cơ chế và trade-off
 
-- **Mục tiêu, speed/size (`OUT-B08-01..02`).** Checksum khóa behavior; `size` mô tả sections của binary cụ thể. Candidate chỉ được giữ khi metric đã chọn cải thiện trong workload đại diện và không phá positive/negative oracle.
+- **Mục tiêu, speed/size (`OUT-B08-01..02`).** Checksum khóa behavior; `size` mô tả sections của binary cụ thể. Candidate chỉ được giữ khi metric đã chọn cải thiện trong workload đại diện và không phá positive/tiêu chí kiểm chứng cho trường hợp lỗi.
 - **Phạm vi optimizer (`OUT-B08-03..07`).** Compiler có thể CSE biểu thức `shared`, lan constants, bỏ copies/dead temporaries và phân tích xuyên function. Validation path vẫn observable qua stderr/exit code nên không được mất.
-- **Backend (`OUT-B08-08..11`).** IRA/sched2 reports cung cấp evidence thật về assignment, live-range analysis và scheduled basic blocks. Không có oracle kiểu “phải dùng thanh ghi X”; exact register/count không bị hard-code.
+- **Backend (`OUT-B08-08..11`).** IRA/sched2 reports cung cấp evidence thật về assignment, live-range analysis và scheduled basic blocks. Không có tiêu chí kiểm chứng kiểu “phải dùng thanh ghi X”; exact register/count không bị hard-code.
 - **Loop (`OUT-B08-12..14`).** LIM/CUNROLL/IVOPTS cho thấy pass và quyết định thật: preheader được tạo, loop này không unroll, strength-reduction candidates được cost và baseline assembly dùng shift+LEA. Không biến một quyết định “không unroll” thành claim tối ưu thành công.
 - **Tool evidence (`OUT-B08-15..17`).** Flags là một phần artifact; MAP trả lời symbol/section được đặt ở đâu; profiler trả lời thời gian/sample tập trung ở đâu. Không công cụ nào tự quyết định business trade-off.
 
@@ -167,11 +167,11 @@ Report `b08.opt` đồng thời cho thấy quyết định inline/missed-inline 
 
 | Dấu hiệu | Nguyên nhân khả dĩ | Chẩn đoán | Khắc phục | Phòng tránh |
 |---|---|---|---|---|
-| O0/O2 khác checksum | UB, uninitialized state hoặc arithmetic sai miền | sanitizer, warnings, giảm input, so output | sửa semantics trước khi đo | dùng fixed-width unsigned cho wrap chủ ý và regression oracle |
+| O0/O2 khác checksum | UB, uninitialized state hoặc arithmetic sai miền | sanitizer, warnings, giảm input, so output | sửa semantics trước khi đo | dùng fixed-width unsigned cho wrap chủ ý và regression tiêu chí kiểm chứng |
 | Timing dao động mạnh | workload ngắn, scheduler/cache noise | chạy lặp, ghi host/load, xem phân bố | tăng bounded workload/repetitions | lưu command, environment và thống kê thay vì một lần chạy |
 | Binary nhỏ hơn nhưng chậm hơn | inline/layout/cache trade-off | `size`, MAP và profiler cùng workload | chọn profile theo constraint thật | không dùng file size làm proxy duy nhất |
 | Profile rỗng/0.00 | sampling chưa đủ hoặc build sai `-pg` | kiểm `gmon.out`, command và report | workload dài hơn; tool phù hợp hơn | tách profile build và smoke-check report |
-| MAP không thấy symbol helper | helper đã inline/local/garbage-collected | xem flags, symbol table, disassembly | dùng debug/profile build phù hợp | không đặt oracle vào việc symbol local luôn tồn tại |
+| MAP không thấy symbol helper | helper đã inline/local/garbage-collected | xem flags, symbol table, disassembly | dùng debug/profile build phù hợp | không đặt tiêu chí kiểm chứng vào việc symbol local luôn tồn tại |
 
 ### 6. Kết quả đã tái lập trên baseline
 
@@ -182,14 +182,14 @@ Trong container Ubuntu 22.04 có GCC 11.4/Binutils 2.38:
 - Negative `0`: exit `2`, stdout rỗng, exact stderr như ticket.
 - ASan+UBSan: exit `0`, không diagnostic thuộc fixture.
 - MAP O2: không rỗng; `gprof` report không rỗng và chứa `mix_value`/`compute_checksum`. Thời gian sample ngắn không được diễn giải thành speedup.
-- GCC dumps: IRA `assign reg`/`live ranges`, sched2 basic blocks, LIM preheader, explicit `Not unrolling`, IVOPTS candidate costs đều match bounded oracle; x86-64 assembly của `mix_value` có shift+LEA cho nhân 17.
+- GCC dumps: IRA `assign reg`/`live ranges`, sched2 basic blocks, LIM preheader, explicit `Not unrolling`, IVOPTS candidate costs đều match bounded tiêu chí kiểm chứng; x86-64 assembly của `mix_value` có shift+LEA cho nhân 17.
 
 ## Practice Time — độc lập, không chấm điểm
 
 Bạn chịu trách nhiệm đánh giá một input mới, **không sửa source và không xem lời giải hoàn chỉnh**.
 
 1. Build ba candidate `-O0`, `-O2`, `-Os` bằng strict flags; mỗi candidate có tên riêng.
-2. Chạy input `2500`; exact oracle cho mọi candidate là:
+2. Chạy input `2500`; tiêu chí kiểm chứng chính xác cho mọi candidate là:
 
    ```text
    OK n=2500 checksum=F2163101
@@ -199,7 +199,7 @@ Bạn chịu trách nhiệm đánh giá một input mới, **không sửa source
 4. Thu `size` và ít nhất 9 lần timing cho mỗi candidate trên cùng máy. Báo median cùng min/max; nêu rõ noise và environment.
 5. Viết quyết định tối đa 120 từ: candidate nào phù hợp nếu `.text` là constraint, candidate nào đáng benchmark thêm nếu latency là constraint, và vì sao dữ liệu này **không** chứng minh một optimization level luôn thắng.
 
-Acceptance: build sạch, exact oracles pass, bảng dữ liệu có command/environment, kết luận có giới hạn; không có solution code hoặc ngưỡng speedup được cho sẵn.
+Acceptance: build sạch, tiêu chí kiểm chứng chính xács pass, bảng dữ liệu có command/environment, kết luận có giới hạn; không có solution code hoặc ngưỡng speedup được cho sẵn.
 
 ## Provenance của các case
 

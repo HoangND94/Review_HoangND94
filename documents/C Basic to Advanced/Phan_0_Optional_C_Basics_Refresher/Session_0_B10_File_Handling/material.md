@@ -5,7 +5,7 @@
 
 ## 🎯 Learning Outcomes
 
-- Thiết kế pipeline đọc file bounded và write→`fflush`→close→reopen verification, kiểm đầy đủ error/EOF/position/cleanup và tạo oracle xác định (`ADVC-H1SD`).
+- Thiết kế pipeline đọc file bounded và write→`fflush`→close→reopen verification, kiểm đầy đủ error/EOF/position/cleanup và tạo tiêu chí kiểm chứng xác định (`ADVC-H1SD`).
 - Đánh giá record text và S-record profile bằng exact diagnostics/checksum evidence (`ADVC-H3SD`).
 - **Increment `M00-FND-10`:** [b10_file_demo.c](assets/b10_file_demo.c), fixtures [lab06_records.csv](assets/lab06_records.csv), [lab06_sample.srec](assets/lab06_sample.srec), [lab06_bad_checksum.srec](assets/lab06_bad_checksum.srec).
 
@@ -13,7 +13,7 @@
 
 - Hoàn thành B09; hiểu array, pointer, bounded string, integer conversion, ownership và cleanup.
 - Strict baseline: `-std=c17 -Wall -Wextra -Wpedantic -Werror`; input chỉ là local path do người chạy cung cấp.
-- Mental map: `persistent bytes ↔ OS filesystem/name/metadata ↔ open handle ↔ C FILE stream + buffering/state → bounded read/checked write → parse hoặc flush/reopen verify → exact oracle → close exactly once`.
+- Mental map: `persistent bytes ↔ OS filesystem/name/metadata ↔ open handle ↔ C FILE stream + buffering/state → bounded read/checked write → parse hoặc flush/reopen verify → tiêu chí kiểm chứng chính xác → close exactly once`.
 - Một file có thể hợp lệ ở tầng bytes nhưng sai schema/checksum; mở file thành công không chứng minh nội dung hợp lệ.
 
 ## 3. Nội dung lý thuyết cốt lõi
@@ -43,7 +43,7 @@
 
 **Khi dùng/không dùng/trade-off.** Mental model logical file đủ cho bounded parser. Không dựa vào “các dòng nằm liên tiếp trên disk” để tối ưu; OS-specific tuning chỉ dùng sau profile. Abstraction tăng portability nhưng che một số durability details.
 
-**Ví dụ/oracle.** CSV fixture có 5 logical text lines; parser không quan tâm sectors. Oracle `OK csv records=4 value_sum=93 flags_or=0x03` chứng minh logical content, không chứng minh block layout.
+**Ví dụ/tiêu chí kiểm chứng.** CSV fixture có 5 logical text lines; parser không quan tâm sectors. tiêu chí kiểm chứng `OK csv records=4 value_sum=93 flags_or=0x03` chứng minh logical content, không chứng minh block layout.
 
 **Best practice.** **Rule:** contract file bằng bytes/records/encoding, không bằng physical layout. **Rationale:** filesystem có quyền phân mảnh/cache. **Positive:** header `id,value,flags` và line cap `96`. **Negative:** giả định một `fread` luôn tương ứng một disk sector hay một record.
 
@@ -55,13 +55,13 @@
 
 **Định nghĩa/ranh giới.** OS quản namespace, metadata, permissions, open handles/descriptors, cache và concurrency. Descriptor/POSIX semantics không đồng nhất với `FILE *`; Unit chỉ dùng chúng để giải thích, không gọi `open(2)`.
 
-**Vai trò/quyết định.** Developer phải xử lý path không tồn tại, permission/resource failures và concurrent replacement theo contract. Không rò path nhạy cảm trong production logs; demo local in path để oracle dễ học.
+**Vai trò/quyết định.** Developer phải xử lý path không tồn tại, permission/resource failures và concurrent replacement theo contract. Không rò path nhạy cảm trong production logs; demo local in path để tiêu chí kiểm chứng dễ học.
 
 **Cơ chế.** `fopen` yêu cầu runtime/OS resolve path và cấp resource; nhiều stream/handle có thể tham chiếu cùng file nhưng có state/buffering khác. Rename/unlink/concurrent writes có behavior theo host.
 
 **Khi dùng/không dùng/trade-off.** `stdio` đủ cho portable sequential parser; OS descriptor API cần khi contract đòi flags/locking/nonblocking/durability cụ thể. Portability đổi lấy ít quyền kiểm soát host semantics.
 
-**Ví dụ/oracle.** Path không tồn tại làm `fopen` trả `NULL`; executable exit `3`, stderr bắt đầu `ERROR cannot open local file:` và không dereference stream.
+**Ví dụ/tiêu chí kiểm chứng.** Path không tồn tại làm `fopen` trả `NULL`; executable exit `3`, stderr bắt đầu `ERROR cannot open local file:` và không dereference stream.
 
 **Best practice.** **Rule:** coi open là operation có thể fail và giữ resource owner rõ. **Rationale:** path hợp lệ về syntax vẫn có thể fail permission/resource. **Positive:** kiểm `stream==NULL` ngay. **Negative:** gọi `fgets` sau `fopen` mà không kiểm.
 
@@ -79,7 +79,7 @@
 
 **Khi dùng/không dùng/trade-off.** Line I/O phù hợp bounded CSV/S-record; block I/O phù hợp binary fixed/length-prefixed data. Line API dễ debug nhưng phải xử lý long line và newline variants.
 
-**Ví dụ/oracle.** CSV line vượt 95 chars bị reject `ERROR CSV line too long at line N`, exit `2`. `write-demo <fresh-scratch-path>` phải tạo đúng 23 bytes `status=ready\nrecords=2\n`, exit `0`, stderr rỗng và stdout `OK write-demo bytes=23 flush=ok reopen=match`.
+**Ví dụ/tiêu chí kiểm chứng.** CSV line vượt 95 chars bị reject `ERROR CSV line too long at line N`, exit `2`. `write-demo <fresh-scratch-path>` phải tạo đúng 23 bytes `status=ready\nrecords=2\n`, exit `0`, stderr rỗng và stdout `OK write-demo bytes=23 flush=ok reopen=match`.
 
 **Best practice.** **Rule:** kiểm return trước buffer use và kiểm completeness/error sau transfer. **Rationale:** EOF, partial record và I/O error là trạng thái khác nhau. **Positive:** `fgets`→newline/EOF check→parse→`ferror`. **Negative:** `while (!feof(f)) { fgets(...); parse(...); }` dùng stale buffer.
 
@@ -97,7 +97,7 @@
 
 **Khi dùng/không dùng/trade-off.** C stream tốt cho formatted/line I/O portable; descriptor API tốt cho OS-specific flags/readiness. Buffering giảm calls nhưng thêm state và visibility timing.
 
-**Ví dụ/oracle.** Asset không trộn descriptor với stdio. CSV/SREC dùng borrowed input stream; `write-demo` dùng một output stream, close, rồi tạo input stream mới để verify. Exact `flush=ok reopen=match` chứng minh workflow tầng stream, không chứng minh physical durability.
+**Ví dụ/tiêu chí kiểm chứng.** Asset không trộn descriptor với stdio. CSV/SREC dùng borrowed input stream; `write-demo` dùng một output stream, close, rồi tạo input stream mới để verify. Exact `flush=ok reopen=match` chứng minh workflow tầng stream, không chứng minh physical durability.
 
 **Best practice.** **Rule:** không mix I/O abstractions trên cùng resource nếu chưa có synchronization contract. **Rationale:** hai lớp giữ state/buffer riêng. **Positive:** mọi read qua `fgets`. **Negative:** `read(fileno(fp),...)` xen `fgets(fp,...)` tùy ý.
 
@@ -115,7 +115,7 @@
 
 **Khi dùng/không dùng/trade-off.** Text dễ inspect/diff nhưng parsing/locale/newline cần policy; binary compact/exact nhưng cần schema/version/endian và hex dump tooling.
 
-**Ví dụ/oracle.** `S107001001020304DE` là text record; validator tính checksum từ decoded pairs, không flash payload `01 02 03 04`. Oracle `data_bytes=4`.
+**Ví dụ/tiêu chí kiểm chứng.** `S107001001020304DE` là text record; validator tính checksum từ decoded pairs, không flash payload `01 02 03 04`. tiêu chí kiểm chứng `data_bytes=4`.
 
 **Best practice.** **Rule:** mode phải khớp representation contract. **Rationale:** text translation và binary byte identity khác nhau. **Positive:** `r` + bounded lines cho CSV/SREC. **Negative:** dùng `strlen` trên binary buffer hoặc coi S-record line là lệnh thiết bị.
 
@@ -133,7 +133,7 @@
 
 **Khi dùng/không dùng/trade-off.** Truyền `FILE *` giúp processor test được với local/temp stream; truyền path khi function phải sở hữu policy open. Borrowed stream linh hoạt nhưng ownership cần ghi rõ.
 
-**Ví dụ/oracle.** `process_csv(stream)` không close; `main` gọi `fclose` dù processor trả `2`. Trong `write-demo`, output `FILE *` không được dùng sau close và input stream mới đọc đúng 23 bytes; sanitizer run không báo lỗi thuộc fixture.
+**Ví dụ/tiêu chí kiểm chứng.** `process_csv(stream)` không close; `main` gọi `fclose` dù processor trả `2`. Trong `write-demo`, output `FILE *` không được dùng sau close và input stream mới đọc đúng 23 bytes; sanitizer run không báo lỗi thuộc fixture.
 
 **Best practice.** **Rule:** mỗi `FILE *` có một close owner, NULL/lifetime được kiểm. **Rationale:** double-close/use-after-close là UB, quên close rò resource. **Positive:** open→process→single close. **Negative:** helper close rồi caller tiếp tục `ferror(stream)`.
 
@@ -151,7 +151,7 @@
 
 **Khi dùng/không dùng/trade-off.** Sequential pass đơn giản, ít state; seek hữu ích cho index/header nhưng có thể không được hỗ trợ ở non-seekable stream. Asset không seek vì checksum/aggregation chỉ cần một pass.
 
-**Ví dụ/oracle.** Sau header CSV, bốn `fgets` lần lượt đọc records 1..4; records=`4`. Không gọi `rewind`, nên không duplicate header/records.
+**Ví dụ/tiêu chí kiểm chứng.** Sau header CSV, bốn `fgets` lần lượt đọc records 1..4; records=`4`. Không gọi `rewind`, nên không duplicate header/records.
 
 **Best practice.** **Rule:** gọi position APIs và kiểm return; không đoán offset text. **Rationale:** stream/host có thể không seekable và text positions opaque. **Positive:** lưu `long p=ftell(fp)`, kiểm `p!=-1L`, restore `fseek`. **Negative:** cộng byte count thủ công rồi seek text stream.
 
@@ -169,7 +169,7 @@
 
 **Khi dùng/không dùng/trade-off.** `r` cho existing text, `wx` cho exclusive-create scratch output, `rb` cho exact binary. Exclusive create yêu cầu caller cấp path mới nhưng ngăn overwrite; C17 cần cleanup explicit.
 
-**Ví dụ/oracle.** Missing read file: exit `3`, `ERROR cannot open local file: <path>`. Fresh scratch write: `OK write-demo bytes=23 flush=ok reopen=match`; file bytes phải match exact payload.
+**Ví dụ/tiêu chí kiểm chứng.** Missing read file: exit `3`, `ERROR cannot open local file: <path>`. Fresh scratch write: `OK write-demo bytes=23 flush=ok reopen=match`; file bytes phải match exact payload.
 
 **Best practice.** **Rule:** open với mode tối thiểu, kiểm ngay, close exactly once và kiểm close khi output/resource integrity quan trọng. **Rationale:** mode sai có thể phá data; close có thể phát hiện buffered-write failure. **Positive:** validator `fopen(path,"r")`; writer dùng `fopen(path,"wx")` dưới scratch directory. **Negative:** output mode truncating không exclusive có thể làm mất dữ liệu trước validation.
 
@@ -187,7 +187,7 @@
 
 **Khi dùng/không dùng/trade-off.** `fgets`+parse dễ tạo deterministic error; `fscanf` ngắn nhưng whitespace/partial conversion khó audit. Block I/O nhanh/gọn cho byte data nhưng schema/checksum vẫn là trách nhiệm application.
 
-**Ví dụ/oracle.** CSV field thừa (`1,18,0x01,extra`) bị `ERROR invalid CSV record at line 2`, exit `2`. Write path chỉ pass nếu `fprintf` ghi 23 chars và reopened `fread` thấy đúng 23 bytes, không thiếu/thừa.
+**Ví dụ/tiêu chí kiểm chứng.** CSV field thừa (`1,18,0x01,extra`) bị `ERROR invalid CSV record at line 2`, exit `2`. Write path chỉ pass nếu `fprintf` ghi 23 chars và reopened `fread` thấy đúng 23 bytes, không thiếu/thừa.
 
 **Best practice.** **Rule:** kiểm exact return và consumed input, không chỉ “khác EOF”. **Rationale:** partial conversion/read có thể để state nửa hợp lệ. **Positive:** parse line rồi yêu cầu `*end=='\0'`. **Negative:** `fscanf(fp,"%u",&x)` rồi bỏ qua return/suffix.
 
@@ -205,7 +205,7 @@
 
 **Khi dùng/không dùng/trade-off.** Seek cho file index/random record; không dùng với pipe/terminal hoặc giả định success. Single pass dùng memory nhỏ nhưng không thuận tiện cross-record references.
 
-**Ví dụ/oracle.** S-record parser reject ngay record sau S9 tại đúng line; nó không seek quay lại và không reset `saw_termination`, nên diagnostic deterministic `ERROR record follows S9 termination at line N`.
+**Ví dụ/tiêu chí kiểm chứng.** S-record parser reject ngay record sau S9 tại đúng line; nó không seek quay lại và không reset `saw_termination`, nên diagnostic deterministic `ERROR record follows S9 termination at line N`.
 
 **Best practice.** **Rule:** centralize position changes, kiểm return và đồng bộ logical parser state. **Rationale:** seek riêng lẻ có thể làm line counter/cache/parser diverge. **Positive:** helper `seek_record` cập nhật cả position và record index. **Negative:** nhiều helpers `fseek` cùng stream không contract.
 
@@ -223,11 +223,11 @@
 
 **Khi dùng/không dùng/trade-off.** Dùng cho protocol prompt/log visibility có contract; không flush mỗi byte nếu không cần vì tăng I/O overhead. Không dùng như disk durability hoặc input discard portable.
 
-**Ví dụ/oracle.** `write-demo` kiểm `fflush(out)`, close, reopen và compare payload; exact stdout `OK write-demo bytes=23 flush=ok reopen=match`. `fflush(stdin)` không xuất hiện. Oracle chỉ nói bytes được chuyển tới host environment và đọc lại được, không nói đã durable trên media.
+**Ví dụ/tiêu chí kiểm chứng.** `write-demo` kiểm `fflush(out)`, close, reopen và compare payload; exact stdout `OK write-demo bytes=23 flush=ok reopen=match`. `fflush(stdin)` không xuất hiện. tiêu chí kiểm chứng chỉ nói bytes được chuyển tới host environment và đọc lại được, không nói đã durable trên media.
 
 **Best practice.** **Rule:** flush output có mục đích, kiểm status; không `fflush(stdin)`. **Rationale:** input behavior không portable và output failure có thể xuất hiện muộn. **Positive:** `if (fflush(out)==EOF) handle_error();`. **Negative:** `fflush(stdin)` để bỏ dòng hoặc cho rằng `fflush(out)` đồng nghĩa dữ liệu đã nằm bền vững trên disk.
 
-**Failure/troubleshooting.** `ERROR flushing local output file` hoặc reopen mismatch → buffered write/resource/content failure → kiểm return của `fprintf`/`fflush`/`fclose`, file length và scratch permissions → dừng trước khi báo success → phòng tránh bằng fresh scratch path và exact reopen oracle; durability cần OS facility ngoài scope.
+**Failure/troubleshooting.** `ERROR flushing local output file` hoặc reopen mismatch → buffered write/resource/content failure → kiểm return của `fprintf`/`fflush`/`fclose`, file length và scratch permissions → dừng trước khi báo success → phòng tránh bằng fresh scratch path và exact reopen tiêu chí kiểm chứng; durability cần OS facility ngoài scope.
 
 #### OUT-B10-12 — Overview about srecord format
 
@@ -241,7 +241,7 @@
 
 **Khi dùng/không dùng/trade-off.** Profile nhỏ phù hợp bài học/checksum gate; không dùng để xác nhận toàn bộ S-record variants, memory ranges, firmware authenticity/signature hay deployment safety. Full production parser cần spec profile/version, address policy, record types và security review riêng.
 
-**Ví dụ/oracle.** `S107001001020304DE` rồi `S9030000FC` cho exact `OK srec records=2 data_bytes=4 start=0000`. Đổi checksum `DE`→`DF` cho mismatch. File chỉ có `S9030000FC` phải exit `2`, stdout rỗng, exact stderr `ERROR S9 termination precedes S1 data at line 1`.
+**Ví dụ/tiêu chí kiểm chứng.** `S107001001020304DE` rồi `S9030000FC` cho exact `OK srec records=2 data_bytes=4 start=0000`. Đổi checksum `DE`→`DF` cho mismatch. File chỉ có `S9030000FC` phải exit `2`, stdout rỗng, exact stderr `ERROR S9 termination precedes S1 data at line 1`.
 
 **Best practice.** **Rule:** validate syntax→count/length→hex→checksum→S1-data-before-S9 sequencing trước khi dùng metadata. **Rationale:** checksum hợp lệ không chứng minh sequence/profile đầy đủ. **Positive:** reject S9-only, S1 rỗng, type ngoài profile và record sau S9. **Negative:** thấy checksum S9 đúng rồi chấp nhận file không có data record hoặc flash bytes.
 
@@ -311,7 +311,7 @@ rm -rf "$scratch_dir"
 - **Text/binary mode:** mode có thể translate text / giữ byte identity.
 - **S1/S9:** S-record data với address 16-bit / termination với start field 16-bit trong profile này.
 - **Byte-count/checksum:** số bytes sau count / ones' complement kiểm tổng record.
-- **Oracle:** stdout, stderr, exit code và diagnostics chính xác dùng quyết định pass/fail.
+- **tiêu chí kiểm chứng:** stdout, stderr, exit code và diagnostics chính xác dùng quyết định pass/fail.
 
 ## 7. Nguồn tham khảo và provenance phần bổ sung
 

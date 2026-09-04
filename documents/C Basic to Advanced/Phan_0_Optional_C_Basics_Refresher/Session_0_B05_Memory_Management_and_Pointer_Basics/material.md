@@ -23,7 +23,7 @@ object + storage duration -> lifetime -> pointer hợp lệ
 ISO C17: ngữ nghĩa object/lifetime/pointer  |  GNU/Linux: ELF/MAP là bằng chứng cục bộ
 ```
 
-Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình phổ quát gồm “code/data/BSS/heap/stack”. Các tên đó có thể mô tả một implementation, nhưng không thay thế khái niệm storage duration và lifetime của C. ELF, linker map, `readelf` và Valgrind trong bài là quan sát riêng của GNU/Linux; địa chỉ hay section cụ thể không phải oracle portable. Unit không dùng MCU, linker script phần cứng, HAL, MMIO, RTOS, ISR hoặc flashing.
+Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình phổ quát gồm “code/data/BSS/heap/stack”. Các tên đó có thể mô tả một implementation, nhưng không thay thế khái niệm storage duration và lifetime của C. ELF, linker map, `readelf` và Valgrind trong bài là quan sát riêng của GNU/Linux; địa chỉ hay section cụ thể không phải tiêu chí kiểm chứng portable. Unit không dùng MCU, linker script phần cứng, HAL, MMIO, RTOS, ISR hoặc flashing.
 
 ## Checklist Content Outlines
 
@@ -51,7 +51,7 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Dùng mô hình lifetime để chứng minh truy cập hợp lệ. Chỉ dùng sơ đồ tiến trình để giải thích một toolchain đã nêu rõ; sơ đồ dễ hình dung nhưng kém portable và có thể bị tối ưu/linker biến đổi.
 
-**Ví dụ và oracle riêng.** `int answer = 42; int *view = &answer; printf("%d\n", *view);` trong cùng block phải in chính xác `42`. Trả `view` ra khỏi hàm chứa `answer` thì không có oracle giá trị hợp lệ vì lifetime đã kết thúc.
+**Ví dụ và tiêu chí kiểm chứng riêng.** `int answer = 42; int *view = &answer; printf("%d\n", *view);` trong cùng block phải in chính xác `42`. Trả `view` ra khỏi hàm chứa `answer` thì không có tiêu chí kiểm chứng giá trị hợp lệ vì lifetime đã kết thúc.
 
 **Best practice.** Rule: mô tả contract bằng lifetime/ownership, không bằng “nằm trên stack/heap” → rationale: contract còn đúng trên implementation khác → positive: “caller giữ buffer tới khi hàm trả về” → negative: “địa chỉ thấp nên chắc còn sống”, có thể dẫn tới dangling pointer.
 
@@ -69,11 +69,11 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Pointer cho phép chia sẻ/mutate nhưng tăng coupling và rủi ro alias/lifetime. Không truyền pointer khi bản sao nhỏ, bất biến và rõ ràng hơn.
 
-**Ví dụ và oracle riêng.** Với `int sample = 27; int *p = &sample; *p += 5; printf("sample=%d view=%d\n", sample, *p);`, oracle là `sample=32 view=32`; địa chỉ cụ thể không thuộc oracle.
+**Ví dụ và tiêu chí kiểm chứng riêng.** Với `int sample = 27; int *p = &sample; *p += 5; printf("sample=%d view=%d\n", sample, *p);`, tiêu chí kiểm chứng là `sample=32 view=32`; địa chỉ cụ thể không thuộc tiêu chí kiểm chứng.
 
 **Best practice.** Rule: kiểm chứng nội dung và quan hệ alias thay vì hard-code địa chỉ → rationale: ASLR, linker và lần chạy có thể đổi địa chỉ → positive: assert `p == &sample` rồi kiểm tra `*p` → negative: mong đợi `p == (int *)0x1234`, không portable và có thể invalid.
 
-**Failure chain.** Dấu hiệu: test thất bại chỉ vì địa chỉ khác → nguyên nhân: đưa địa chỉ implementation-specific vào oracle → chẩn đoán: tìm format `%p`/hằng địa chỉ trong assertion → sửa: kiểm tra giá trị hoặc quan hệ pointer hợp lệ → phòng ngừa: loại địa chỉ tuyệt đối khỏi acceptance criteria.
+**Failure chain.** Dấu hiệu: test thất bại chỉ vì địa chỉ khác → nguyên nhân: đưa địa chỉ implementation-specific vào tiêu chí kiểm chứng → chẩn đoán: tìm format `%p`/hằng địa chỉ trong assertion → sửa: kiểm tra giá trị hoặc quan hệ pointer hợp lệ → phòng ngừa: loại địa chỉ tuyệt đối khỏi acceptance criteria.
 
 #### 3 Linker file and memory
 
@@ -85,9 +85,9 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Cơ chế.** Tùy chọn `-Wl,-Map=b05_memory_demo.map` chuyển yêu cầu cho linker; `test -s` chứng minh file tồn tại và không rỗng; `readelf -h` xác nhận ELF; `readelf -s` cho symbol table nếu symbol còn được giữ. Tối ưu hóa, LTO, stripping và linker script có thể thay đổi evidence.
 
-**Khi dùng / không dùng / trade-off.** Dùng trong debug footprint/linking trên đúng baseline. Không dùng section `.bss`/`.data` để suy rằng một pointer còn hợp lệ. Map chi tiết nhưng phụ thuộc toolchain và không nên là functional oracle portable.
+**Khi dùng / không dùng / trade-off.** Dùng trong debug footprint/linking trên đúng baseline. Không dùng section `.bss`/`.data` để suy rằng một pointer còn hợp lệ. Map chi tiết nhưng phụ thuộc toolchain và không nên là functional tiêu chí kiểm chứng portable.
 
-**Ví dụ và oracle riêng.** Build asset bằng `gcc ... -Wl,-Map=b05_memory_demo.map ...`; chạy `test -s b05_memory_demo.map && grep -q 'main' b05_memory_demo.map`. Oracle cục bộ là exit `0`; không kiểm tra offset/address cố định.
+**Ví dụ và tiêu chí kiểm chứng riêng.** Build asset bằng `gcc ... -Wl,-Map=b05_memory_demo.map ...`; chạy `test -s b05_memory_demo.map && grep -q 'main' b05_memory_demo.map`. tiêu chí kiểm chứng cục bộ là exit `0`; không kiểm tra offset/address cố định.
 
 **Best practice.** Rule: gắn nhãn mọi bằng chứng MAP/ELF bằng compiler, linker, version và flags → rationale: layout thay đổi theo build → positive: “GNU ld 2.38, `-O2`, map có `main`” → negative: “C17 yêu cầu `main` ở địa chỉ X”, là kết luận sai phạm vi.
 
@@ -105,7 +105,7 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Dùng pointer cho cấu trúc động, optional value và sharing có contract. Không dùng pointer chỉ để “tăng hiệu năng” khi chưa đo; indirection có thể làm API khó hiểu và locality kém.
 
-**Ví dụ và oracle riêng.** `int x = 7; int *p = &x; *p = 12; printf("x=%d\n", x);` có oracle `x=12`. `int *p; *p = 12;` không có hành vi xác định vì giá trị pointer indeterminate.
+**Ví dụ và tiêu chí kiểm chứng riêng.** `int x = 7; int *p = &x; *p = 12; printf("x=%d\n", x);` có tiêu chí kiểm chứng `x=12`. `int *p; *p = 12;` không có hành vi xác định vì giá trị pointer indeterminate.
 
 **Best practice.** Rule: khởi tạo pointer tại khai báo và dùng `const` cho view chỉ đọc → rationale: thu hẹp trạng thái bất hợp lệ → positive: `const int *view = &x;` → negative: pointer chưa khởi tạo rồi dereference.
 
@@ -123,7 +123,7 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Rebind view là bình thường; rebind owning pointer chỉ sau khi đã giải quyết allocation cũ. Cast có thể cần ở boundary đặc thù nhưng không nên che cảnh báo kiểu.
 
-**Ví dụ và oracle riêng.** `int a=4,b=9; int *selected=&a; selected=&b; printf("a=%d b=%d selected=%d\n",a,b,*selected);` in `a=4 b=9 selected=9`.
+**Ví dụ và tiêu chí kiểm chứng riêng.** `int a=4,b=9; int *selected=&a; selected=&b; printf("a=%d b=%d selected=%d\n",a,b,*selected);` in `a=4 b=9 selected=9`.
 
 **Best practice.** Rule: không cast kết quả `malloc` trong C và không overwrite owner trước khi kiểm tra allocation mới → rationale: cast có thể che thiếu prototype; overwrite gây leak → positive: `int *next = realloc(data, bytes); if (next) data = next;` → negative: `data = realloc(data, bytes);` làm mất pointer cũ khi thất bại.
 
@@ -141,11 +141,11 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Dynamic storage phù hợp khi kích thước runtime hoặc lifetime vượt scope. Mảng có giới hạn cố định đơn giản/deterministic hơn. Tăng capacity theo cấp số nhân giảm số lần cấp phát nhưng giữ dư bộ nhớ.
 
-**Ví dụ và oracle riêng.** Asset thêm `{3,-1,7,0,5}`, tăng capacity `0→4→8`, rồi destroy. Oracle chính xác là `size=5 capacity=8 sum=14 first=3 last=5`, sau đó `ownership=destroyed data=null size=0 capacity=0`.
+**Ví dụ và tiêu chí kiểm chứng riêng.** Asset thêm `{3,-1,7,0,5}`, tăng capacity `0→4→8`, rồi destroy. tiêu chí kiểm chứng chính xác là `size=5 capacity=8 sum=14 first=3 last=5`, sau đó `ownership=destroyed data=null size=0 capacity=0`.
 
 **Best practice.** Rule: check overflow trước allocation, dùng temporary cho `realloc`, và có đúng một hàm destroy idempotent theo contract → rationale: tránh wrap, leak và double-free → positive: asset giữ `data` cũ nếu grow thất bại → negative: nhân size không kiểm tra rồi ghi `count` phần tử vào allocation quá nhỏ.
 
-**Failure chain.** Dấu hiệu: heap corruption hoặc allocation nhỏ bất thường với count lớn → nguyên nhân: overflow phép nhân → chẩn đoán: test boundary `SIZE_MAX / sizeof(T) + 1`, Memcheck → sửa: guard trước phép nhân → phòng ngừa: helper checked-size và negative oracle bắt buộc.
+**Failure chain.** Dấu hiệu: heap corruption hoặc allocation nhỏ bất thường với count lớn → nguyên nhân: overflow phép nhân → chẩn đoán: test boundary `SIZE_MAX / sizeof(T) + 1`, Memcheck → sửa: guard trước phép nhân → phòng ngừa: helper checked-size và tiêu chí kiểm chứng cho trường hợp lỗi bắt buộc.
 
 #### 7 Pointer arithmetic
 
@@ -159,13 +159,13 @@ Ranh giới bắt buộc: ISO C không quy định một sơ đồ tiến trình
 
 **Khi dùng / không dùng / trade-off.** Range `[begin,end)` tạo loop gọn và không cần sentinel data. Index thường dễ audit overflow/bounds hơn; không dùng arithmetic để “đi” giữa hai object độc lập.
 
-**Ví dụ và oracle riêng.** Với `int a[]={2,7,1};` và vòng `for (const int *p=a; p<a+3; ++p) sum+=*p;`, oracle là `sum=10 distance=3`; `a+3` được so/trừ nhưng không dereference.
+**Ví dụ và tiêu chí kiểm chứng riêng.** Với `int a[]={2,7,1};` và vòng `for (const int *p=a; p<a+3; ++p) sum+=*p;`, tiêu chí kiểm chứng là `sum=10 distance=3`; `a+3` được so/trừ nhưng không dereference.
 
 **Best practice.** Rule: ràng buộc pointer arithmetic trong một allocation và dùng điều kiện `< end` trước dereference → rationale: one-past chỉ là mốc → positive: vòng lặp trên → negative: `*(a + 3)` đọc ngoài mảng.
 
 **Failure chain.** Dấu hiệu: invalid read ở cuối loop → nguyên nhân: dùng `<= end` hoặc dereference one-past → chẩn đoán: in index/distance, kiểm tra loop invariant, Memcheck → sửa thành `< end` → phòng ngừa: review range theo mô hình half-open.
 
-## Ví dụ tích hợp và oracle
+## Ví dụ tích hợp và tiêu chí kiểm chứng
 
 Asset `assets/b05_memory_demo.c` kết hợp owner vector, checked `realloc`, range traversal và destructor. Lệnh chuẩn:
 
@@ -196,7 +196,7 @@ error: allocation size overflow
 | Leak khi `realloc` thất bại | overwrite owner | xem nhánh `NULL` | temporary pointer | checked-grow helper |
 | Use-after-free | view sống lâu hơn owner | lần theo lifetime/Memcheck | bỏ view hoặc kéo dài owner | ghi ownership contract |
 | Invalid read cuối mảng | dereference one-past | audit `[begin,end)` | dùng `< end` | boundary test |
-| Test địa chỉ không ổn định | oracle phụ thuộc ASLR/linker | tìm `%p`/hằng địa chỉ | assert quan hệ/giá trị | tách portable oracle khỏi ELF evidence |
+| Test địa chỉ không ổn định | tiêu chí kiểm chứng phụ thuộc ASLR/linker | tìm `%p`/hằng địa chỉ | assert quan hệ/giá trị | tách portable tiêu chí kiểm chứng khỏi ELF evidence |
 | Map được dùng để “chứng minh” lifetime | trộn hai tầng mô hình | đối chiếu nguồn quy tắc | dùng ISO C cho lifetime | nhãn mọi evidence cục bộ |
 
 ## Thuật ngữ
@@ -212,7 +212,7 @@ error: allocation size overflow
 ## Tự kiểm tra — Quiz 5 câu
 
 1. ISO C17 có bắt buộc object automatic phải nằm trên hardware/process stack không?  
-   **Đáp án:** Không. C17 quy định storage duration/lifetime; “stack” là lựa chọn implementation. Vì vậy oracle portable không dùng địa chỉ hay section để chứng minh lifetime.
+   **Đáp án:** Không. C17 quy định storage duration/lifetime; “stack” là lựa chọn implementation. Vì vậy tiêu chí kiểm chứng portable không dùng địa chỉ hay section để chứng minh lifetime.
 
 2. Vì sao `data = realloc(data, bytes);` nguy hiểm?  
    **Đáp án:** Khi thất bại, `realloc` trả `NULL` còn allocation cũ vẫn tồn tại; gán trực tiếp làm mất handle và gây leak. Dùng temporary rồi commit khi khác `NULL`.
@@ -235,4 +235,4 @@ error: allocation size overflow
 - **Using LD, GNU Binutils 2.38** và **GNU Binary Utilities 2.38**, GNU Project/FSF, truy cập 2026-08-22: https://sourceware.org/binutils/docs-2.38/ld/ và https://sourceware.org/binutils/docs-2.38/binutils/
 - **Valgrind User Manual — Memcheck**, Valgrind Developers, baseline 3.18.1, truy cập 2026-08-22: https://valgrind.org/docs/manual/mc-manual.html
 
-Các ví dụ, input và oracle của Unit là dữ liệu đào tạo synthetic. Các nhận định về ELF/MAP/Valgrind chỉ áp dụng cho baseline GNU/Linux được nêu; nội dung portable dựa trên C17.
+Các ví dụ, input và tiêu chí kiểm chứng của Unit là dữ liệu đào tạo synthetic. Các nhận định về ELF/MAP/Valgrind chỉ áp dụng cho baseline GNU/Linux được nêu; nội dung portable dựa trên C17.

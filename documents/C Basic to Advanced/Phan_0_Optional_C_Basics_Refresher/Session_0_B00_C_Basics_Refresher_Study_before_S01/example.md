@@ -10,7 +10,7 @@
 - **Outline refs:** `OUT-B00-01`, `OUT-B00-02`, `OUT-B00-03`, `OUT-B00-04`.
 - **Project increment:** `M00-RDY` — một C systems developer chứng minh mình đọc/validate input, tách hàm, quản lý bounded array/output pointer và tái hiện lỗi bằng compiler/debugger trước khi nhận ticket M01.
 - **Artifact:** [basic_refresher_demo.c](assets/basic_refresher_demo.c).
-- **Validation method:** executable với happy oracle và invalid-input oracle.
+- **Validation method:** executable với tiêu chí kiểm chứng cho trường hợp hợp lệ và invalid-input tiêu chí kiểm chứng.
 
 ## Case CASE-B00-01 — Tóm tắt sample synthetic có validation
 
@@ -59,7 +59,7 @@ Thiết kế này cho thấy function contract, scope, pointer output và contro
 
 Source đầy đủ: [assets/basic_refresher_demo.c](assets/basic_refresher_demo.c).
 
-### 5. Build và happy oracle
+### 5. Build và tiêu chí kiểm chứng cho trường hợp hợp lệ
 
 ```bash
 gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O0 -g \
@@ -79,9 +79,9 @@ OK count=4 min=18 max=30 mean=23.25
 
 - Stderr rỗng.
 
-Lý do mean là `23.25`: total `93` được cast sang `double` trước phép chia cho count `4`; integer division sẽ cho oracle sai.
+Lý do mean là `23.25`: total `93` được cast sang `double` trước phép chia cho count `4`; integer division sẽ cho tiêu chí kiểm chứng sai.
 
-### 6. Invalid-input oracle
+### 6. Invalid-input tiêu chí kiểm chứng
 
 Chạy riêng để ghi đúng exit code và hai stream:
 
@@ -137,7 +137,7 @@ backtrace
 quit
 ```
 
-Breakpoint dòng `36` là điều kiện ngay sau `strtol` trong asset hiện tại: lần `continue` đầu dừng ở token `18`, lần kế tiếp dừng ở token `xx`. Nếu source được định dạng lại, dùng `list parse_samples`, chọn dòng `if` ngay sau `strtol`, rồi đặt breakpoint tại dòng đó. Evidence cần quan sát là ở token `xx`, `end == cursor`, `*cursor == 'x'`, parser trả `0`, `main` chọn nhánh in lỗi và trả `2`. GDB hỗ trợ định vị control/data state; oracle cuối vẫn là output và exit code ở mục 6.
+Breakpoint dòng `36` là điều kiện ngay sau `strtol` trong asset hiện tại: lần `continue` đầu dừng ở token `18`, lần kế tiếp dừng ở token `xx`. Nếu source được định dạng lại, dùng `list parse_samples`, chọn dòng `if` ngay sau `strtol`, rồi đặt breakpoint tại dòng đó. Evidence cần quan sát là ở token `xx`, `end == cursor`, `*cursor == 'x'`, parser trả `0`, `main` chọn nhánh in lỗi và trả `2`. GDB hỗ trợ định vị control/data state; tiêu chí kiểm chứng cuối vẫn là output và exit code ở mục 6.
 
 ### 8. Boundary checks mở rộng
 
@@ -161,16 +161,16 @@ Boundary fixtures quan trọng hơn việc thêm nhiều input ngẫu nhiên: ch
 
 ### 9. Failure modes và cách sửa
 
-- **Dấu hiệu:** compile báo format mismatch ở `%zu`. **Nguyên nhân:** count không phải `size_t` hoặc format không khớp. **Chẩn đoán:** đọc expected/actual type trong warning. **Sửa:** đồng bộ type và format; không cast để tắt warning. **Phòng tránh:** giữ `-Werror` trong build oracle.
+- **Dấu hiệu:** compile báo format mismatch ở `%zu`. **Nguyên nhân:** count không phải `size_t` hoặc format không khớp. **Chẩn đoán:** đọc expected/actual type trong warning. **Sửa:** đồng bộ type và format; không cast để tắt warning. **Phòng tránh:** giữ `-Werror` trong build tiêu chí kiểm chứng.
 - **Dấu hiệu:** happy case in mean `23.00`. **Nguyên nhân:** integer division. **Chẩn đoán:** GDB `print total`, `print sample_count`, xem biểu thức. **Sửa:** convert có chủ đích sang `double` trước chia. **Phòng tránh:** golden input có mean không nguyên.
-- **Dấu hiệu:** invalid input vẫn sinh summary một phần. **Nguyên nhân:** caller bỏ qua return status hoặc parser commit output quá sớm. **Chẩn đoán:** breakpoint tại return của parser và watch `sample_count`. **Sửa:** chỉ gọi summarizer khi parse thành công; output-on-error là count `0`. **Phòng tránh:** invalid oracle kiểm cả stdout và exit code.
+- **Dấu hiệu:** invalid input vẫn sinh summary một phần. **Nguyên nhân:** caller bỏ qua return status hoặc parser commit output quá sớm. **Chẩn đoán:** breakpoint tại return của parser và watch `sample_count`. **Sửa:** chỉ gọi summarizer khi parse thành công; output-on-error là count `0`. **Phòng tránh:** invalid tiêu chí kiểm chứng kiểm cả stdout và exit code.
 - **Dấu hiệu:** phần tử thứ chín làm crash hoặc đổi output. **Nguyên nhân:** capacity check sau array write. **Chẩn đoán:** theo dõi `count` trước `values[count]`. **Sửa:** reject khi `count == capacity` trước lần ghi. **Phòng tránh:** giữ fixture chín phần tử.
 
 ### 10. Trade-off và bài học chuyển giao
 
-Fixed array, linear parse và linear summary tối ưu cho khả năng đọc/kiểm ở bài ôn tập, không tối ưu cho stream lớn. Tool chỉ chấp nhận grammar đơn giản và locale-independent; không xử lý whitespace, đơn vị đo hoặc Unicode. Thêm những khả năng đó cần contract và oracle mới, không nên mở rộng ngầm.
+Fixed array, linear parse và linear summary tối ưu cho khả năng đọc/kiểm ở bài ôn tập, không tối ưu cho stream lớn. Tool chỉ chấp nhận grammar đơn giản và locale-independent; không xử lý whitespace, đơn vị đo hoặc Unicode. Thêm những khả năng đó cần contract và tiêu chí kiểm chứng mới, không nên mở rộng ngầm.
 
-Khi vào S01, học viên sẽ nâng mental model này lên pointer-to-pointer, const-correctness sâu hơn, function pointer, callback table và `void *` generic API. Điều cần giữ nguyên là thói quen ghi precondition, lifetime/bounds, status/output-on-error và oracle có thể chạy lại.
+Khi vào S01, học viên sẽ nâng mental model này lên pointer-to-pointer, const-correctness sâu hơn, function pointer, callback table và `void *` generic API. Điều cần giữ nguyên là thói quen ghi precondition, lifetime/bounds, status/output-on-error và tiêu chí kiểm chứng có thể chạy lại.
 
 ## Provenance của các case
 

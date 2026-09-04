@@ -22,9 +22,9 @@ gprof --version
 
 ## 2. Mental map
 
-`business/latency-size problem → fixed workload → correctness oracle → baseline build → profile hotspot → chọn transformation → build so sánh → output/checksum invariant → đo lặp lại → quyết định giữ/bỏ có phạm vi`
+`business/latency-size problem → fixed workload → correctness tiêu chí kiểm chứng → baseline build → profile hotspot → chọn transformation → build so sánh → output/checksum invariant → đo lặp lại → quyết định giữ/bỏ có phạm vi`
 
-Optimizer được phép thay cách thực thi nhưng phải giữ observable behavior của chương trình có semantics xác định. Nếu `-O0` và `-O2` khác output, hãy nghi undefined behavior, data race, uninitialized state hoặc oracle không ổn định trước khi nói về hiệu năng.
+Optimizer được phép thay cách thực thi nhưng phải giữ observable behavior của chương trình có semantics xác định. Nếu `-O0` và `-O2` khác output, hãy nghi undefined behavior, data race, uninitialized state hoặc tiêu chí kiểm chứng không ổn định trước khi nói về hiệu năng.
 
 ## 3. Nội dung lý thuyết cốt lõi
 
@@ -48,7 +48,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 #### OUT-B08-01 — why to optimize code
 
-**Mapping.** `OUT-B08-01` → `ADVC-H3SD` → `M00-FND-08`: chỉ tối ưu sau khi một mục tiêu đo được và correctness oracle đã khóa.
+**Mapping.** `OUT-B08-01` → `ADVC-H3SD` → `M00-FND-08`: chỉ tối ưu sau khi một mục tiêu đo được và correctness tiêu chí kiểm chứng đã khóa.
 
 **Định nghĩa/ranh giới.** Tối ưu là thay đổi build/code/layout để cải thiện metric như latency, throughput, memory hoặc energy trong workload xác định mà không phá contract. “Code trông nhanh” hoặc một lần chạy ngắn không phải bằng chứng.
 
@@ -58,7 +58,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Dùng khi có bottleneck hoặc budget thật; không tối ưu speculative ở code hiếm chạy. Tối ưu có thể tăng độ phức tạp, build time và maintenance cost.
 
-**Ví dụ/oracle.** Workload `n=1000` của asset phải luôn in `OK n=1000 checksum=7BD0A72C`; chỉ sau `diff` exit `0` giữa O0/O2 mới thu profile. Metric timing không có ngưỡng phổ quát.
+**Ví dụ/tiêu chí kiểm chứng.** Workload `n=1000` của asset phải luôn in `OK n=1000 checksum=7BD0A72C`; chỉ sau `diff` exit `0` giữa O0/O2 mới thu profile. Metric timing không có ngưỡng phổ quát.
 
 **Best practice.** **Rule:** measure → change one hypothesis → remeasure. **Rationale:** giữ quan hệ nhân-quả. **Positive:** lưu command, host fingerprint, checksum. **Negative:** đổi nhiều vòng lặp rồi chọn lần chạy nhanh nhất, không thể quy kết cải thiện.
 
@@ -76,7 +76,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** So `-O2`, `-Os` khi size là constraint; không suy từ kích thước file filesystem sang resident memory. Trade-off phải ghi cả metric và regression risk.
 
-**Ví dụ/oracle.** Build O2/Os, chạy cùng `1000`; oracle bắt buộc cho cả hai là `checksum=7BD0A72C` và `diff` rỗng. `size` numbers được ghi nguyên trạng nhưng không có expected winner.
+**Ví dụ/tiêu chí kiểm chứng.** Build O2/Os, chạy cùng `1000`; tiêu chí kiểm chứng bắt buộc cho cả hai là `checksum=7BD0A72C` và `diff` rỗng. `size` numbers được ghi nguyên trạng nhưng không có expected winner.
 
 **Best practice.** **Rule:** tách correctness gate khỏi speed/size comparison. **Rationale:** metric tốt không hợp thức hóa behavior sai. **Positive:** bảng output hash + `.text/.data/.bss`. **Negative:** chọn binary nhỏ nhất dù negative input không còn exit `2`.
 
@@ -94,7 +94,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Local change dễ review; global option có thể phát hiện cơ hội lớn nhưng tăng compile/link time và khó map source/assembly.
 
-**Ví dụ/oracle.** `mix_value` là scope function; O2 có thể tối ưu cả loop `compute_checksum`. Với `n=8`, cả O0/O2 phải in `OK n=8 checksum=6E7527A0`.
+**Ví dụ/tiêu chí kiểm chứng.** `mix_value` là scope function; O2 có thể tối ưu cả loop `compute_checksum`. Với `n=8`, cả O0/O2 phải in `OK n=8 checksum=6E7527A0`.
 
 **Best practice.** **Rule:** bật scope rộng từng bước, giữ binary/flags/evidence. **Rationale/cơ chế:** mỗi lần chỉ đổi một phạm vi giúp quy biến đổi và regression cho đúng data-flow scope; optimization toàn cục tác động nhiều function/path hơn local optimization. **Positive:** O2 rồi LTO là hai candidate riêng. **Negative:** bật O3+LTO và sửa source cùng lúc, không biết nguyên nhân regression.
 
@@ -112,7 +112,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Dùng biến intermediate khi tăng clarity hoặc computation đắt; không cache read từ I/O/volatile. Thêm temporary có thể tăng live range.
 
-**Ví dụ/oracle.** Expression `(scaled ^ 0xA5A5A5A5) + (scaled >> 3)` được tính một lần; `n=1` cho exact `OK n=1 checksum=96335EB2`.
+**Ví dụ/tiêu chí kiểm chứng.** Expression `(scaled ^ 0xA5A5A5A5) + (scaled >> 3)` được tính một lần; `n=1` cho exact `OK n=1 checksum=96335EB2`.
 
 **Best practice.** **Rule:** ưu tiên semantics/alias rõ, kiểm assembly khi metric yêu cầu. **Rationale/cơ chế:** CSE chỉ tái sử dụng expression khi value numbering chứng minh operands không bị alias/side effect thay đổi; contract rõ vừa an toàn vừa mở cơ hội tối ưu. **Positive:** const local `shared`. **Negative:** cache `*pointer` rồi function khác sửa pointee nhưng vẫn dùng cache.
 
@@ -130,7 +130,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Hữu ích cho configuration compile-time ổn định; runtime configuration cần giữ input. Specialization tăng code size.
 
-**Ví dụ/oracle.** Dù constants được propagate, input `1003` vẫn được xử lý runtime và output phải là `OK n=1003 checksum=AC6DA027`.
+**Ví dụ/tiêu chí kiểm chứng.** Dù constants được propagate, input `1003` vẫn được xử lý runtime và output phải là `OK n=1003 checksum=AC6DA027`.
 
 **Best practice.** **Rule:** hằng phải có tên/type đúng miền. **Rationale/cơ chế:** propagation giữ semantics của type; suffix/type sai có thể kích hoạt promotion hoặc signed overflow khác với phép wrap `uint32_t` chủ ý. **Positive:** `UINT32_C(...)`. **Negative:** macro đổi type/signedness ngoài ý muốn, tạo checksum khác giữa platforms.
 
@@ -148,7 +148,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Tin compiler cho scalar; refactor source khi copy che intent hoặc object lớn. Snapshot deliberate phải được giữ/test.
 
-**Ví dụ/oracle.** `checksum = compute_checksum(count)` có thể propagate return vào `printf`; source vẫn giữ tên. Oracle `n=1000` không đổi: `7BD0A72C`.
+**Ví dụ/tiêu chí kiểm chứng.** `checksum = compute_checksum(count)` có thể propagate return vào `printf`; source vẫn giữ tên. tiêu chí kiểm chứng `n=1000` không đổi: `7BD0A72C`.
 
 **Best practice.** **Rule:** đo generated code trước micro-refactor. **Rationale/cơ chế:** SSA/copy propagation thường xóa machine copy nhưng vẫn giữ tên source; refactor không có evidence có thể làm mất snapshot semantics mà không giảm instruction. **Positive:** giữ `checksum` cho review/debug. **Negative:** xóa biến snapshot rồi đọc mutable source lần hai, behavior đổi.
 
@@ -166,9 +166,9 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Compiler DCE tốt cho temporary; source cleanup giảm maintenance. Giữ diagnostic path dù happy benchmark không chạy nó.
 
-**Ví dụ/oracle.** Với input `0`, parser vẫn phải exit `2`, stdout rỗng, stderr `ERROR item-count must be 1..1000000`; O2 không được “tối ưu mất” negative contract.
+**Ví dụ/tiêu chí kiểm chứng.** Với input `0`, parser vẫn phải exit `2`, stdout rỗng, stderr `ERROR item-count must be 1..1000000`; O2 không được “tối ưu mất” negative contract.
 
-**Best practice.** **Rule:** regression cả happy và negative sau optimization. **Rationale/cơ chế:** DCE được phép bỏ code không observable, nên stderr/exit-code oracle chứng minh validation path vẫn là behavior cần giữ chứ không phải dead path. **Positive:** checksum + invalid-input oracle. **Negative:** benchmark chỉ happy rồi bỏ validation vì “không dùng”.
+**Best practice.** **Rule:** regression cả happy và negative sau optimization. **Rationale/cơ chế:** DCE được phép bỏ code không observable, nên stderr/exit-code tiêu chí kiểm chứng chứng minh validation path vẫn là behavior cần giữ chứ không phải dead path. **Positive:** checksum + invalid-input tiêu chí kiểm chứng. **Negative:** benchmark chỉ happy rồi bỏ validation vì “không dùng”.
 
 **Failure/troubleshooting.** Code bị bỏ ngoài ý muốn → result không observable/UB → inspect optimized assembly và output → tạo legitimate sink/test, sửa UB → không dùng volatile giả làm benchmark sink nếu không cần semantics đó.
 
@@ -184,7 +184,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Xem allocation khi hotspot instruction-level; không đánh giá từ source alone. Giảm live variables có thể giúp nhưng làm code khó đọc.
 
-**Ví dụ/oracle.** Loop giữ `index`, `checksum`, `scaled/shared`; O2 assembly có thể giữ registers. Oracle vẫn là `n=1000 checksum=7BD0A72C`, không phải “phải dùng register X”.
+**Ví dụ/tiêu chí kiểm chứng.** Loop giữ `index`, `checksum`, `scaled/shared`; O2 assembly có thể giữ registers. tiêu chí kiểm chứng vẫn là `n=1000 checksum=7BD0A72C`, không phải “phải dùng register X”.
 
 **Best practice.** **Rule:** profile spill cost trước refactor. **Rationale/cơ chế:** allocator quyết định register/spill từ live ranges, ABI và target; chỉ spill trong hotspot đo được mới biện minh cho việc rút ngắn lifetime hoặc đổi algorithm. **Positive:** inspect annotated assembly. **Negative:** thêm `register` và tuyên bố speedup không đo.
 
@@ -202,7 +202,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Function nhỏ/hot có thể lợi; function lớn/cold có thể hại I-cache. Debug stack ít rõ hơn.
 
-**Ví dụ/oracle.** `mix_value` được gọi mỗi iteration; O2 có thể inline. Cả O0 và O2 với `n=8` phải cho `6E7527A0`.
+**Ví dụ/tiêu chí kiểm chứng.** `mix_value` được gọi mỗi iteration; O2 có thể inline. Cả O0 và O2 với `n=8` phải cho `6E7527A0`.
 
 **Best practice.** **Rule:** để optimizer quyết định trước, kiểm optimization report/map. **Rationale/cơ chế:** cost model cân call overhead với code growth và context mới sau inline; ép bằng macro bỏ type/single-evaluation contract mà vẫn có thể làm I-cache xấu hơn. **Positive:** source function nhỏ, pure. **Negative:** macro hóa function để ép inline, gây multi-evaluation/type defect.
 
@@ -220,7 +220,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Inspect khi profile cho thấy backend stalls; không viết source rối để đoán scheduler. Target khác có optimum khác.
 
-**Ví dụ/oracle.** O2 có thể reorder XOR/shift/multiply trong checksum nhưng `n=1` vẫn phải `96335EB2` và invalid input vẫn exit `2`.
+**Ví dụ/tiêu chí kiểm chứng.** O2 có thể reorder XOR/shift/multiply trong checksum nhưng `n=1` vẫn phải `96335EB2` và invalid input vẫn exit `2`.
 
 **Best practice.** **Rule:** giữ defined behavior và dùng target evidence. **Rationale/cơ chế:** scheduler dựa trên dependency/resource model của target, thứ mà thứ tự dòng C không mô tả; side effects hoặc sequencing mơ hồ vừa cản scheduling vừa có thể tạo UB. **Positive:** independent pure arithmetic. **Negative:** dựa vào thứ tự evaluation không được C bảo đảm hoặc nhét side effects vào một expression.
 
@@ -238,7 +238,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Scope nhỏ giúp review và register pressure; scope quá vụn có thể giảm readability.
 
-**Ví dụ/oracle.** `scaled` và `shared` chỉ sống trong `mix_value`; sanitizer run `n=1000` phải không diagnostic và output `7BD0A72C`.
+**Ví dụ/tiêu chí kiểm chứng.** `scaled` và `shared` chỉ sống trong `mix_value`; sanitizer run `n=1000` phải không diagnostic và output `7BD0A72C`.
 
 **Best practice.** **Rule:** initialize tại nơi dùng và không để alias thoát lifetime. **Rationale/cơ chế:** liveness chỉ tối ưu value có definition hợp lệ; access trước initialization hoặc sau object lifetime là UB và làm mọi kết luận register/spill không đáng tin. **Positive:** const locals trong helper. **Negative:** callback giữ địa chỉ local rồi dùng sau return.
 
@@ -256,7 +256,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Hoist constants/bounds ổn định; không hoist validation phụ thuộc iteration. Hoisting có thể tính expression dù loop zero lần, nên cần chú ý lỗi/divide.
 
-**Ví dụ/oracle.** Scale/multiplier là invariant của checksum loop; input `1003` vẫn phải `AC6DA027`.
+**Ví dụ/tiêu chí kiểm chứng.** Scale/multiplier là invariant của checksum loop; input `1003` vẫn phải `AC6DA027`.
 
 **Best practice.** **Rule:** chứng minh invariant và zero-iteration behavior. **Rationale/cơ chế:** code motion đổi thời điểm evaluation; dù operands không đổi, hoist một operation có trap/side effect có thể tạo behavior ở path mà loop vốn chạy zero lần. **Positive:** const config trước loop. **Negative:** đưa division ra loop khiến divide-by-zero xảy ra dù loop không chạy.
 
@@ -274,7 +274,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Hợp loop trip count lớn/đơn giản; không hợp code body lớn hoặc count nhỏ/không đều.
 
-**Ví dụ/oracle.** Candidate unroll-factor 4 phải xử lý remainder của `n=1003`; exact output vẫn `OK n=1003 checksum=AC6DA027`.
+**Ví dụ/tiêu chí kiểm chứng.** Candidate unroll-factor 4 phải xử lý remainder của `n=1003`; exact output vẫn `OK n=1003 checksum=AC6DA027`.
 
 **Best practice.** **Rule:** test counts `0,1,k-1,k,k+1`. **Rationale/cơ chế:** unrolling xử lý `k` phần tử mỗi body và cần remainder/control path riêng; các biên quanh `k` phơi lỗi bỏ sót hoặc đọc quá cuối. **Positive:** remainder loop rõ. **Negative:** chỉ benchmark multiple-of-4, bỏ ba phần tử cuối.
 
@@ -292,7 +292,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Hợp loop numeric hot; không thay `/ 2` signed bằng `>> 1` nếu behavior với số âm chưa được định nghĩa trong contract.
 
-**Ví dụ/oracle.** Dù compiler biến `index * 17 + 3`, `n=2500` phải in `OK n=2500 checksum=F2163101`.
+**Ví dụ/tiêu chí kiểm chứng.** Dù compiler biến `index * 17 + 3`, `n=2500` phải in `OK n=2500 checksum=F2163101`.
 
 **Best practice.** **Rule:** khóa type/range rồi compare output. **Rationale/cơ chế:** strength reduction chỉ tương đương trong miền số học đã chứng minh; promotions, rounding và signed overflow có thể làm shift/add khác phép nhân source. **Positive:** `uint32_t` constants. **Negative:** dùng signed overflow như modulo, O2 có thể tối ưu theo assumption không overflow.
 
@@ -310,7 +310,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** `-O0 -g` dễ debug; `-O2` candidate release; `-pg` cho gprof; sanitizers cho defect evidence. Không dùng `-ffast-math` khi floating contract chưa cho phép.
 
-**Ví dụ/oracle.** Hai command O0/O2 phải tạo stdout byte-for-byte giống `OK n=1000 checksum=7BD0A72C`; `diff -u` exit `0`.
+**Ví dụ/tiêu chí kiểm chứng.** Hai command O0/O2 phải tạo stdout byte-for-byte giống `OK n=1000 checksum=7BD0A72C`; `diff -u` exit `0`.
 
 **Best practice.** **Rule:** record full command/tool version. **Rationale/cơ chế:** option set điều khiển passes, code generation và debug/profile fidelity; thiếu command/version khiến binary và evidence không thể tái tạo hay quy kết. **Positive:** distinct `/tmp/b08_o0`, `/tmp/b08_o2`. **Negative:** overwrite binary và không biết output thuộc flags nào.
 
@@ -328,7 +328,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Dùng khi size/layout là constraint; không đọc MAP cũ sau rebuild. Report lớn cần filter nhưng phải giữ bản gốc.
 
-**Ví dụ/oracle.** Link O2 với `-Wl,-Map,/tmp/b08.map`; oracle: link exit `0`, `/tmp/b08.map` nonempty, executable vẫn in `7BD0A72C`. Không đặt ngưỡng address/size portable.
+**Ví dụ/tiêu chí kiểm chứng.** Link O2 với `-Wl,-Map,/tmp/b08.map`; tiêu chí kiểm chứng: link exit `0`, `/tmp/b08.map` nonempty, executable vẫn in `7BD0A72C`. Không đặt ngưỡng address/size portable.
 
 **Best practice.** **Rule:** bind MAP to build ID/hash. **Rationale/cơ chế:** linker sinh MAP từ đúng set objects/options tại một lần link; build khác có section/symbol placement khác nên evidence ghép chéo dẫn tới quyết định sai. **Positive:** lưu compiler command + SHA-256. **Negative:** ghép MAP O0 với timing O2.
 
@@ -346,7 +346,7 @@ Optimizer được phép thay cách thực thi nhưng phải giữ observable be
 
 **Khi dùng/không dùng/trade-off.** Profile sau correctness; không dùng một microbenchmark làm claim production. Instrumented result dùng để tìm hotspot, không làm release binary mặc định.
 
-**Ví dụ/oracle.** Build `-pg -O0`, chạy `1000000`, `gprof` report phải nonempty và nhắc `mix_value`/`compute_checksum`; stdout vẫn có fixed checksum của binary hiện tại. Không yêu cầu phần trăm/time tối thiểu.
+**Ví dụ/tiêu chí kiểm chứng.** Build `-pg -O0`, chạy `1000000`, `gprof` report phải nonempty và nhắc `mix_value`/`compute_checksum`; stdout vẫn có fixed checksum của binary hiện tại. Không yêu cầu phần trăm/time tối thiểu.
 
 **Best practice.** **Rule:** profile cùng fixed workload, lưu raw report và decision. **Rationale/cơ chế:** sampling/instrumentation phân bổ cost theo lần chạy cụ thể và chịu noise/resolution; raw report + workload nối observation với decision có giới hạn. **Positive:** “giữ code vì không có hotspot đủ lớn”. **Negative:** tuyên bố 2× từ một lần chạy hoặc khi timer hiển thị 0.00.
 

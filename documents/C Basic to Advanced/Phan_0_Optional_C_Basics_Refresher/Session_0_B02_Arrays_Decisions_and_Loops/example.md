@@ -38,7 +38,7 @@ Artifact là chương trình hosted ISO C17, không truy cập thanh ghi, ngắt
 
 ### 1. Ticket và tiêu chí thành công
 
-- **Vai trò/stakeholder:** C systems developer; reviewer cần build log và oracle tái lập được.
+- **Vai trò/stakeholder:** C systems developer; reviewer cần build log và tiêu chí kiểm chứng tái lập được.
 - **Vấn đề:** nhận `MODE VALUE...`; hỗ trợ `sum`, `max`, `first-positive`; không đọc quá capacity và không dùng dữ liệu parse lỗi.
 - **Ràng buộc:** ISO C17; `1..8` giá trị `int32_t`; zero warnings; không phụ thuộc locale, clock hay platform-specific API.
 - **Thành công:** self-test pass; happy path cho đúng hai dòng stdout/exit `0`; token lỗi cho đúng stderr/exit `2` và stdout rỗng.
@@ -91,7 +91,7 @@ argv → parse mode → kiểm count 1..8 → parse từng int32_t
 - Vòng parse dùng `i < count`; vị trí lỗi hiển thị theo kiểu người dùng, bắt đầu từ `1`.
 - `MODE_MAX` khởi tạo từ `values[0]`, không dùng `0` làm maximum giả.
 - `MODE_FIRST_POSITIVE` chỉ trả success nếu `break` xảy ra trước `i == count`.
-- `decimal_digits` dùng `do...while`, do đó input `0` cho oracle `1` digit.
+- `decimal_digits` dùng `do...while`, do đó input `0` cho tiêu chí kiểm chứng `1` digit.
 
 ### 5. Build và chạy chính xác
 
@@ -156,13 +156,13 @@ test "$negative_output" = \
   "error: invalid integer at position 2: bad"
 ```
 
-Pass khi script exit `0`. Oracle gồm cả thứ tự dòng, stream và exit code.
+Pass khi script exit `0`. tiêu chí kiểm chứng gồm cả thứ tự dòng, stream và exit code.
 
 ### 8. Giải thích sâu, failure modes và chuyển giao
 
 - **Symptom:** `max -5 -2` cho `0` → **cause:** khởi tạo maximum bằng `0` → **diagnose:** trace giá trị trước loop → **fix:** dùng `values[0]`, loop từ `1` → **prevent:** fixture toàn số âm.
 - **Symptom:** input thứ chín làm hỏng memory → **cause:** ghi trước khi kiểm capacity → **diagnose:** sanitizer/kiểm `count` và chỉ số → **fix:** reject `count > MAX_VALUES` trước loop → **prevent:** test 8 và 9 phần tử.
-- **Symptom:** `first-positive -2 0` in kết quả cũ → **cause:** không phân biệt “không tìm thấy” → **diagnose:** theo dõi `i` sau loop → **fix:** trả `false` khi `i == count` → **prevent:** oracle no-match với exit `3`.
+- **Symptom:** `first-positive -2 0` in kết quả cũ → **cause:** không phân biệt “không tìm thấy” → **diagnose:** theo dõi `i` sau loop → **fix:** trả `false` khi `i == count` → **prevent:** tiêu chí kiểm chứng no-match với exit `3`.
 - **Giới hạn:** đây là batch nhỏ trong memory; không thay cho streaming, vòng lặp real-time có WCET, hoặc xử lý concurrent.
 
 Nguyên tắc chuyển giao: array luôn đi với capacity/count; branch phải thể hiện policy; loop phải có bound hoặc progress chứng minh được; invalid input không được chảy sang bước tính toán.

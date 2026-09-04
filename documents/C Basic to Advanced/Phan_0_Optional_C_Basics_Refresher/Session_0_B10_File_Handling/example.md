@@ -77,7 +77,7 @@ gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2 \
   assets/b10_file_demo.c -o b10_file_demo
 ```
 
-### 4. Happy oracles
+### 4. tiêu chí kiểm chứng cho trường hợp hợp lệs
 
 CSV:
 
@@ -111,7 +111,7 @@ S1 count `07` = 2 address bytes + 4 data bytes + 1 checksum byte. Tổng low byt
 OK srec records=2 data_bytes=4 start=0000
 ```
 
-Đây là oracle định dạng file; không phải firmware-authenticity, address-policy hay deployment oracle.
+Đây là tiêu chí kiểm chứng định dạng file; không phải firmware-authenticity, address-policy hay deployment tiêu chí kiểm chứng.
 
 Write/flush/reopen dùng **fresh scratch directory**, không dùng path của fixture:
 
@@ -135,7 +135,7 @@ OK write-demo bytes=23 flush=ok reopen=match
 
 `flush=ok` chỉ xác nhận C library chuyển buffered output tới host environment và content đọc lại khớp; không phải physical-durability claim.
 
-### 5. Negative oracles
+### 5. tiêu chí kiểm chứng cho trường hợp lỗis
 
 Checksum sai:
 
@@ -246,13 +246,13 @@ Line buffers hữu hạn ngăn unbounded memory use nhưng reject record dài. S
 | Dấu hiệu | Nguyên nhân | Chẩn đoán | Sửa | Phòng tránh |
 |---|---|---|---|---|
 | Record cuối lặp/garbage | loop dùng `!feof` | log read return và indicators | loop trên `fgets` return, rồi `ferror` | fixtures empty/no-final-newline |
-| Empty bị báo resource error hoặc ngược lại | không kiểm `ferror` sau initial `fgets==NULL` | chạy empty file và Linux directory-read đối chứng | `ferror`→exit `3`, otherwise empty→exit `2` | khóa exact exit/channel oracles |
+| Empty bị báo resource error hoặc ngược lại | không kiểm `ferror` sau initial `fgets==NULL` | chạy empty file và Linux directory-read đối chứng | `ferror`→exit `3`, otherwise empty→exit `2` | khóa exact exit/channel tiêu chí kiểm chứngs |
 | Long line thành hai records | không kiểm newline/completeness | fixture tại capacity±1 | reject/consume theo stated policy | fixed cap + boundary tests |
 | CSV suffix bị bỏ qua | formatted conversion/parse partial | log unconsumed substring | require exactly two commas và consumed-all fields | malformed fixture matrix |
 | Checksum khác theo host | newline/text bytes tính nhầm | dump decoded hex pairs và running sum | trim record boundary; sum decoded bytes | golden good/bad vectors |
 | Record sau S9 vẫn pass | thiếu state-machine check | fixture S9 rồi S1 | reject next line | sequencing tests |
 | S9-only vẫn pass | chỉ kiểm termination/checksum, không track S1 | fixture chỉ `S9030000FC` | require nonempty S1 before S9 | S9-only + empty-S1 tests |
-| Báo write thành công nhưng file sai | bỏ return/flush/close/reopen check | exact length+`cmp`, inspect stderr | fail-fast trên `fprintf`/`fflush`/`fclose`/`fread` | fresh scratch + reopen oracle |
+| Báo write thành công nhưng file sai | bỏ return/flush/close/reopen check | exact length+`cmp`, inspect stderr | fail-fast trên `fprintf`/`fflush`/`fclose`/`fread` | fresh scratch + reopen tiêu chí kiểm chứng |
 | “File pass nên flash được” | nhầm integrity với authenticity/deployment | review scope/evidence | dừng workflow, thiết kế separate authorized validator | label output/file-validation-only, không hardware APIs |
 | Resource leak/double close | ownership mơ hồ | trace open/close, Valgrind | single owner/cleanup | borrowed-stream API contract |
 
@@ -281,7 +281,7 @@ id,value,flags
 11,20,0x04
 ```
 
-Exact oracle:
+tiêu chí kiểm chứng chính xác:
 
 ```text
 OK csv records=2 value_sum=32 flags_or=0x05
@@ -294,7 +294,7 @@ S1050020AA55DB
 S9030020DC
 ```
 
-Exact oracle:
+tiêu chí kiểm chứng chính xác:
 
 ```text
 OK srec records=2 data_bytes=2 start=0020
@@ -303,14 +303,14 @@ OK srec records=2 data_bytes=2 start=0020
 Yêu cầu:
 
 1. Strict build và chạy cả hai inputs; xác minh exit `0`, stderr rỗng, stdout exact bằng `diff`.
-2. Tạo bản copy S-record đổi checksum `DB` thành `DA`; oracle: exit `2`, stdout rỗng, exact stderr `ERROR S-record checksum mismatch at line 1`.
-3. Tạo CSV có field thứ tư; oracle: exit `2`, stdout rỗng, exact stderr `ERROR invalid CSV record at line 2`.
-4. Chạy `write-demo` với một fresh scratch path khác; oracle `OK write-demo bytes=23 flush=ok reopen=match`, content exact `status=ready\nrecords=2\n`. Không dùng fixture path.
-5. Tạo S9-only input; oracle exit `2`, stdout rỗng, stderr `ERROR S9 termination precedes S1 data at line 1`.
+2. Tạo bản copy S-record đổi checksum `DB` thành `DA`; tiêu chí kiểm chứng: exit `2`, stdout rỗng, exact stderr `ERROR S-record checksum mismatch at line 1`.
+3. Tạo CSV có field thứ tư; tiêu chí kiểm chứng: exit `2`, stdout rỗng, exact stderr `ERROR invalid CSV record at line 2`.
+4. Chạy `write-demo` với một fresh scratch path khác; tiêu chí kiểm chứng `OK write-demo bytes=23 flush=ok reopen=match`, content exact `status=ready\nrecords=2\n`. Không dùng fixture path.
+5. Tạo S9-only input; tiêu chí kiểm chứng exit `2`, stdout rỗng, stderr `ERROR S9 termination precedes S1 data at line 1`.
 6. Vẽ ownership/state trace cho cả read và write→flush→close→reopen; ghi rõ vì sao không `fflush(stdin)` và vì sao flush không đồng nghĩa physical durability.
 7. Viết câu kết luận: evidence này xác nhận gì về file format/local I/O và **không** xác nhận gì về hardware/flashing.
 
-Acceptance chỉ gồm input/oracles/analysis; không có solution implementation mới và không có thao tác thiết bị.
+Acceptance chỉ gồm input/tiêu chí kiểm chứngs/analysis; không có solution implementation mới và không có thao tác thiết bị.
 
 ## Provenance của các case
 

@@ -11,7 +11,7 @@ Một C systems developer cần bàn giao increment `M00-FND-05`: chương trìn
 - **LO:** `ADVC-H1SD`.
 - **Artifact:** `assets/b05_memory_demo.c`.
 - **Baseline:** Ubuntu 22.04, GCC 11.4; code lõi chỉ dùng ISO C17.
-- **Success:** strict build exit `0` và zero warnings; hai oracle dưới đây khớp `stdout`/`stderr`/exit code; không leak hay invalid access trong ca đã cho.
+- **Success:** strict build exit `0` và zero warnings; hai tiêu chí kiểm chứng dưới đây khớp `stdout`/`stderr`/exit code; không leak hay invalid access trong ca đã cho.
 
 ### Mapping đầy đủ
 
@@ -32,7 +32,7 @@ Một C systems developer cần bàn giao increment `M00-FND-05`: chương trìn
 - Growth nhân đôi, capacity đầu tiên là `4`; mọi phép nhân byte phải qua guard `capacity <= SIZE_MAX / sizeof *data`.
 - Owner duy nhất là `int_vector_t.data`; hàm destroy phải trả object về trạng thái rỗng.
 - Negative input logic là capacity `SIZE_MAX / sizeof(int) + 1`, phải bị từ chối trước khi gọi allocator.
-- Không đưa địa chỉ, tên section hay offset ELF vào functional oracle.
+- Không đưa địa chỉ, tên section hay offset ELF vào functional tiêu chí kiểm chứng.
 
 ## Phân tích lựa chọn và trade-off
 
@@ -51,7 +51,7 @@ Mở `assets/b05_memory_demo.c` và lần theo bốn invariant:
 
 `--self-test` triển khai happy path; `--negative` gọi đúng checked-allocation boundary. Mọi đối số khác trả usage error `64`, giúp CLI không im lặng chạy sai mode.
 
-## Build strict và functional oracle portable
+## Build strict và functional tiêu chí kiểm chứng portable
 
 Từ thư mục Unit:
 
@@ -60,13 +60,13 @@ gcc -std=c17 -Wall -Wextra -Wpedantic -Werror -O2 \
   assets/b05_memory_demo.c -o b05_memory_demo
 ```
 
-Oracle build: exit `0`, `stdout` rỗng, `stderr` rỗng. Chạy happy path:
+tiêu chí kiểm chứng build: exit `0`, `stdout` rỗng, `stderr` rỗng. Chạy happy path:
 
 ```sh
 ./b05_memory_demo --self-test
 ```
 
-Oracle chính xác:
+tiêu chí kiểm chứng chính xác:
 
 - exit code: `0`
 - `stderr`: rỗng
@@ -88,7 +88,7 @@ set -e
 printf 'exit=%d\n' "$rc"
 ```
 
-Oracle chính xác:
+tiêu chí kiểm chứng chính xác:
 
 - `rc` là `2`.
 - `negative.out` có kích thước `0` byte.
@@ -98,7 +98,7 @@ Oracle chính xác:
 error: allocation size overflow
 ```
 
-Lỗi phải xuất hiện trước allocator; không chấp nhận “allocator trả NULL” như oracle thay thế vì điều đó phụ thuộc môi trường.
+Lỗi phải xuất hiện trước allocator; không chấp nhận “allocator trả NULL” như tiêu chí kiểm chứng thay thế vì điều đó phụ thuộc môi trường.
 
 ## Lane evidence GNU/Linux riêng biệt
 
@@ -114,7 +114,7 @@ readelf -h b05_memory_demo_elf | grep -q 'ELF'
 readelf -s b05_memory_demo_elf | grep -q '[[:space:]]main$'
 ```
 
-Oracle cục bộ: từng lệnh exit `0`; map không rỗng; ELF header và symbol `main` được tìm thấy. Không so địa chỉ, section size hoặc offset cố định. Tối ưu hóa, strip, LTO hay toolchain khác có thể đổi evidence dù functional oracle vẫn đúng.
+tiêu chí kiểm chứng cục bộ: từng lệnh exit `0`; map không rỗng; ELF header và symbol `main` được tìm thấy. Không so địa chỉ, section size hoặc offset cố định. Tối ưu hóa, strip, LTO hay toolchain khác có thể đổi evidence dù functional tiêu chí kiểm chứng vẫn đúng.
 
 Nếu đúng baseline có Valgrind 3.18.1:
 
@@ -123,7 +123,7 @@ valgrind --leak-check=full --error-exitcode=99 \
   ./b05_memory_demo --self-test >valgrind.stdout 2>valgrind.stderr
 ```
 
-Oracle: exit `0`, `valgrind.stdout` bằng happy stdout; báo cáo Memcheck chứa `ERROR SUMMARY: 0 errors from 0 contexts`. Đây là evidence tool-specific bổ sung, không thay cho code review lifetime/ownership.
+tiêu chí kiểm chứng: exit `0`, `valgrind.stdout` bằng happy stdout; báo cáo Memcheck chứa `ERROR SUMMARY: 0 errors from 0 contexts`. Đây là evidence tool-specific bổ sung, không thay cho code review lifetime/ownership.
 
 ## Vì sao output đúng
 
@@ -139,7 +139,7 @@ Negative case tạo capacity vừa lớn hơn thương số an toàn. Guard nh�
 | Tổng sai/invalid read | loop dereference one-past | review điều kiện cursor, Memcheck | dùng `cursor < end` | invariant `[begin,end)` |
 | Leak khi grow lỗi | gán `realloc` trực tiếp cho owner | fault injection/Memcheck | temporary rồi commit | helper grow duy nhất |
 | Double-free | hai owner hoặc destroy không có contract | trace owner transitions | một owner, reset sau free | document move/destroy rules |
-| MAP khác giữa hai build | flags/linker/version khác | so command manifest | đánh giá evidence theo baseline | không dùng address/offset làm oracle |
+| MAP khác giữa hai build | flags/linker/version khác | so command manifest | đánh giá evidence theo baseline | không dùng address/offset làm tiêu chí kiểm chứng |
 
 ## Bài học chuyển giao
 
@@ -154,7 +154,7 @@ Tạo bản sao riêng của asset và mở rộng self-test bằng bộ input m
 - Thêm một negative test độc lập cho capacity `SIZE_MAX / sizeof(int) + 1`.
 - Strict build phải exit `0`, zero warnings.
 
-Oracle happy path mới:
+tiêu chí kiểm chứng happy path mới:
 
 ```text
 size=4 capacity=4 sum=21 first=8 last=4
@@ -168,7 +168,7 @@ Exit `0`, `stderr` rỗng. Negative path phải exit `2`, `stdout` rỗng và `s
 error: allocation size overflow
 ```
 
-Không dùng MAP/ELF để suy lifetime. Nộp source bản sao, command build/run và ba giá trị oracle (`stdout`, `stderr`, exit code); phần này cố ý không cung cấp code lời giải.
+Không dùng MAP/ELF để suy lifetime. Nộp source bản sao, command build/run và ba giá trị tiêu chí kiểm chứng (`stdout`, `stderr`, exit code); phần này cố ý không cung cấp code lời giải.
 
 ## Provenance của các case
 

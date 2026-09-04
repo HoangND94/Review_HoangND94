@@ -52,7 +52,7 @@ B02 array + flow ───┴→ B03 function contract
                            B04 interface/preprocessor
 ```
 
-Function boundary là nơi biến giả định thành contract: input nào hợp lệ, object nào được phép sửa, output nào chỉ có giá trị khi success, và resource nào bị giới hạn. Prototype là bằng chứng compiler kiểm được; test oracle là bằng chứng runtime kiểm được.
+Function boundary là nơi biến giả định thành contract: input nào hợp lệ, object nào được phép sửa, output nào chỉ có giá trị khi success, và resource nào bị giới hạn. Prototype là bằng chứng compiler kiểm được; tiêu chí kiểm chứng là bằng chứng runtime kiểm được.
 
 ## 3. Nội dung lý thuyết cốt lõi
 
@@ -95,7 +95,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** Dùng function để có type checking và một điểm implementation. Không tạo wrapper vô nghĩa chỉ gọi một function khác; abstraction tăng readability nhưng thêm boundary cần đặt tên/contract.
 
-**Ví dụ + exact oracle:** `clamp_upper(11, 10)` trả chính xác `10`; `clamp_upper(3, 10)` trả `3`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `clamp_upper(11, 10)` trả chính xác `10`; `clamp_upper(3, 10)` trả `3`.
 
 **Best practice:** **Rule:** viết parameter list và return contract cụ thể → **rationale:** compiler bắt mismatch sớm → **positive:** `int self_test(void)` → **negative:** `int self_test()` để ý nghĩa parameter không rõ trong C17.
 
@@ -113,7 +113,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** Header chung giảm drift nhưng tạo dependency cần quản lý include guard. Prototype riêng lẻ copy vào nhiều `.c` nhanh lúc đầu nhưng dễ bất tương thích.
 
-**Ví dụ + exact oracle:** với `int32_t parsed=0`, `parse_i32("42", &parsed)` phải trả `true` và `parsed == 42`; `parse_i32("42x", &parsed)` phải trả `false`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** với `int32_t parsed=0`, `parse_i32("42", &parsed)` phải trả `true` và `parsed == 42`; `parse_i32("42x", &parsed)` phải trả `false`.
 
 **Best practice:** **Rule:** declaration chỉ có một nguồn sự thật → **rationale:** compiler so definition với header → **positive:** implementation include chính header của nó → **negative:** client tự chép prototype rồi đổi `size_t` thành `int`.
 
@@ -131,7 +131,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** `static` tốt cho implementation detail và tối ưu cục bộ; không dùng nếu function là API liên translation unit. Internal linkage giảm coupling nhưng test black-box thay vì gọi helper từ module khác.
 
-**Ví dụ + exact oracle:** strict-build asset đơn lẻ exit `0`; mọi helper chỉ được gọi bên trong file và `./b03_functions_demo --self-test` in `B03 SELF-TEST PASS checks=9`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** strict-build asset đơn lẻ exit `0`; mọi helper chỉ được gọi bên trong file và `./b03_functions_demo --self-test` in `B03 SELF-TEST PASS checks=9`.
 
 **Best practice:** **Rule:** default helper về `static`, export có chủ đích qua header → **rationale:** interface nhỏ dễ review → **positive:** `static bool find_range(...)` → **negative:** để tất cả helper external và hy vọng tên không va chạm.
 
@@ -153,7 +153,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** Có ích cho header/file-local helper nhỏ; không dùng như thuốc chữa performance hoặc cho body lớn. Có thể giảm call overhead nhưng tăng code size/I-cache pressure.
 
-**Ví dụ + exact oracle:** build ở `-O0` và `-O2`, rồi chạy `--summarize 10 3 7 11`; cả hai binary phải cho cùng dòng đầu `count=3 sum=21 min=3 max=11 clipped_sum=20` và exit `0`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** build ở `-O0` và `-O2`, rồi chạy `--summarize 10 3 7 11`; cả hai binary phải cho cùng dòng đầu `count=3 sum=21 min=3 max=11 clipped_sum=20` và exit `0`.
 
 **Best practice:** **Rule:** xem `inline` là design/linkage choice, đo optimization riêng → **rationale:** as-if rule cho compiler tự chọn → **positive:** `static inline` helper thuần nhỏ → **negative:** assert rằng keyword chắc chắn loại bỏ call.
 
@@ -165,15 +165,15 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Định nghĩa/ranh giới:** Size là số byte/section của artifact; speed là metric trên workload/target xác định. Source code hay sự hiện diện của `inline` không đủ kết luận; debug/release, LTO, CPU và input làm kết quả thay đổi.
 
-**Vai trò/quyết định:** Chốt correctness oracle trước, sau đó so cùng compiler/flags/target/dataset bằng `size`, map file và benchmark lặp; ghi uncertainty.
+**Vai trò/quyết định:** Chốt correctness tiêu chí kiểm chứng trước, sau đó so cùng compiler/flags/target/dataset bằng `size`, map file và benchmark lặp; ghi uncertainty.
 
 **Cơ chế:** tạo hai build chỉ khác optimization, xác minh output giống nhau, rồi đo `.text` và thời gian trên workload nội bộ `--benchmark`. Mode này chạy 10.000.000 iteration trong một process, biến đổi state unsigned xác định và in checksum để công việc không bị loại bỏ im lặng. Mỗi build warm-up một lần, đo năm lần bằng `date +%s%N` của GNU Coreutils, lấy median; nếu khác nhiều biến cùng lúc, không gán nguyên nhân cho inline.
 
 **Dùng/không dùng/trade-off:** Đo khi size/latency là requirement; không microbenchmark CLI startup để kết luận helper nhanh hơn. Inlining có thể tăng speed và size, hoặc giúp tối ưu liên thủ tục làm cả hai tốt hơn.
 
-**Ví dụ + exact oracle:** cả build `-O0` và `-O2` chạy `--benchmark 10000000` phải stdout đúng `BENCH iterations=10000000 checksum=-230967616032`, stderr rỗng, exit `0`. Evidence hợp lệ có compiler/OS fingerprint, đúng năm elapsed samples và median cho mỗi build; số giây/size không có ngưỡng portable và không bắt buộc `-O2` nhanh hơn.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** cả build `-O0` và `-O2` chạy `--benchmark 10000000` phải stdout đúng `BENCH iterations=10000000 checksum=-230967616032`, stderr rỗng, exit `0`. Evidence hợp lệ có compiler/OS fingerprint, đúng năm elapsed samples và median cho mỗi build; số giây/size không có ngưỡng portable và không bắt buộc `-O2` nhanh hơn.
 
-**Best practice:** **Rule:** một comparison thay một biến và giữ oracle → **rationale:** tránh kết luận do nhiễu → **positive:** `-O2` vs `-O2 -fno-inline` cùng input → **negative:** so debug x86 với release ARM rồi quy mọi chênh lệch cho keyword.
+**Best practice:** **Rule:** một comparison thay một biến và giữ tiêu chí kiểm chứng → **rationale:** tránh kết luận do nhiễu → **positive:** `-O2` vs `-O2 -fno-inline` cùng input → **negative:** so debug x86 với release ARM rồi quy mọi chênh lệch cho keyword.
 
 **Lỗi:** dấu hiệu benchmark “nhanh” nhưng output thiếu → nguyên nhân optimizer loại công việc/fixture khác → chẩn đoán kiểm output và command line → sửa giữ observable result/dataset → phòng tránh lưu script, binary size và checksum fixture.
 
@@ -189,7 +189,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** Macro không tạo call và làm việc trên token/type khác nhau nhưng diagnostic/debug khó, side-effect risk cao. Function rõ contract và symbol/debug tốt hơn.
 
-**Ví dụ + exact oracle:** `double_i32(3)` phải trả `6`. Không chạy `DOUBLE(i++)`: nó sửa `i` nhiều lần không được sequencing, dẫn đến undefined behavior nên **không tồn tại oracle hợp lệ**.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `double_i32(3)` phải trả `6`. Không chạy `DOUBLE(i++)`: nó sửa `i` nhiều lần không được sequencing, dẫn đến undefined behavior nên **không tồn tại tiêu chí kiểm chứng hợp lệ**.
 
 **Best practice:** **Rule:** không truyền expression có side effect vào function-like macro và ưu tiên typed function → **rationale:** tránh multiple evaluation → **positive:** `clamp_upper(reading, limit)` → **negative:** `MAX(read_sensor(), threshold)` nếu macro có thể gọi sensor hai lần.
 
@@ -207,7 +207,7 @@ Nhóm này định nghĩa function qua signature, contract và linkage. “Local
 
 **Dùng/không dùng/trade-off:** Dùng khi API intrinsically heterogeneous/format-driven; không dùng để né struct/array. Call gọn nhưng mismatch count/type là undefined behavior và khó phân tích tĩnh.
 
-**Ví dụ + exact oracle:** `checked_sum_varargs(3U, &total, 3, 7, 11)` phải trả `true`, đặt `total == 21`; chính check này nằm trong self-test.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `checked_sum_varargs(3U, &total, 3, 7, 11)` phải trả `true`, đặt `total == 21`; chính check này nằm trong self-test.
 
 **Best practice:** **Rule:** có protocol explicit cho số lượng/type và gọi `va_end` trên mọi path sau `va_start` → **rationale:** callee không tự khám phá arguments → **positive:** count `3`, ba `int` → **negative:** count `4` nhưng chỉ truyền ba giá trị hoặc đọc `double` như `int`.
 
@@ -229,7 +229,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Tốt cho scalar/enum; aggregate lớn có thể truyền `const T *`. Value semantics dễ suy luận, đổi lại copy aggregate có thể tốn chi phí.
 
-**Ví dụ + exact oracle:** với caller `int32_t x=11`, gọi `clamp_upper(x,10)` cho return `10` và sau call `x` vẫn chính xác `11`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** với caller `int32_t x=11`, gọi `clamp_upper(x,10)` cho return `10` và sau call `x` vẫn chính xác `11`.
 
 **Best practice:** **Rule:** mặc định input-only scalar theo value, đặt tên return rõ → **rationale:** giảm alias/mutation → **positive:** `clamp_upper(value, limit)` → **negative:** nhận `int32_t *` rồi sửa input chỉ để trả một scalar.
 
@@ -247,7 +247,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Dùng khi mutation/output là contract; không dùng pointer chỉ vì “C nhanh hơn”. Cho nhiều output nhưng thêm alias/null/lifetime risk.
 
-**Ví dụ + exact oracle:** `parse_i32("-7", &value)` trả `true`, `value == -7`; `parse_i32("-7", NULL)` trả `false` và không dereference.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `parse_i32("-7", &value)` trả `true`, `value == -7`; `parse_i32("-7", NULL)` trả `false` và không dereference.
 
 **Best practice:** **Rule:** null-check, nêu ownership và chỉ publish output sau validation → **rationale:** failure không để state nửa chừng → **positive:** local candidate rồi `*out=candidate` → **negative:** ghi từng phần output trước khi phát hiện token lỗi.
 
@@ -265,7 +265,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Pattern status + output áp dụng khi mọi giá trị của output type đều hợp lệ nên không có sentinel. Verbose hơn direct return nhưng không mất một giá trị để báo lỗi.
 
-**Ví dụ + exact oracle:** `./b03_functions_demo --summarize bad 3` phải stdout rỗng, stderr đúng `error: limit is not an int32 value: bad`, exit `2`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `./b03_functions_demo --summarize bad 3` phải stdout rỗng, stderr đúng `error: limit is not an int32 value: bad`, exit `2`.
 
 **Best practice:** **Rule:** luôn kiểm status trước đọc output → **rationale:** output có thể không được ghi khi failure → **positive:** branch ngay sau `parse_i32` → **negative:** in `limit` dù parser trả `false`.
 
@@ -283,11 +283,11 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Struct return tốt khi outputs luôn đi cùng nhau; output pointers hữu ích với caller-owned storage/API hiện hữu. Pointer version linh hoạt nhưng nhiều null/alias cases hơn.
 
-**Ví dụ + exact oracle:** `values={3,7,11}`, `find_range(values,3,&min,&max)` trả `true`, `min==3`, `max==11`. Với `int32_t same=1234`, `find_range(values,3,&same,&same)` phải trả `false` và `same` vẫn chính xác `1234`; count `0` cũng trả `false`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `values={3,7,11}`, `find_range(values,3,&min,&max)` trả `true`, `min==3`, `max==11`. Với `int32_t same=1234`, `find_range(values,3,&same,&same)` phải trả `false` và `same` vẫn chính xác `1234`; count `0` cũng trả `false`.
 
 **Best practice:** **Rule:** status, alias policy và validity-on-failure của từng output phải explicit → **rationale:** hai kết quả không thể cùng tồn tại trong một object và caller không phải suy đoán sentinel/state dở dang → **positive:** hai pointer distinct + candidates rồi publish → **negative:** nhận `&same,&same`, ghi minimum rồi ghi đè bằng maximum.
 
-**Lỗi:** dấu hiệu chỉ còn maximum khi caller dùng một biến → nguyên nhân hai output pointer alias → chẩn đoán so địa chỉ `minimum == maximum` và kiểm state trước/sau failure → sửa reject trước mọi write → phòng tránh tests null/alias/empty/1/n và failure-atomic oracle.
+**Lỗi:** dấu hiệu chỉ còn maximum khi caller dùng một biến → nguyên nhân hai output pointer alias → chẩn đoán so địa chỉ `minimum == maximum` và kiểm state trước/sau failure → sửa reject trước mọi write → phòng tránh tests null/alias/empty/1/n và failure-atomic tiêu chí kiểm chứng.
 
 #### OUT-B03-15 Passing array as argument
 
@@ -301,7 +301,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Pointer + length là API portable cho contiguous sequence. Không dùng `sizeof parameter` để đo length; slice explicit dễ reuse nhưng caller/callee phải duy trì invariant.
 
-**Ví dụ + exact oracle:** với `{3,7,11}` và count `2`, range phải là `min=3,max=7`; giá trị `11` không được đọc.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** với `{3,7,11}` và count `2`, range phải là `min=3,max=7`; giá trị `11` không được đọc.
 
 **Best practice:** **Rule:** đặt pointer và length cạnh nhau, kiểm trước dereference → **rationale:** parameter decay mất bounds → **positive:** `(values,count)` → **negative:** loop tới `MAX_VALUES` dù caller chỉ có ba phần tử.
 
@@ -319,7 +319,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Context pointer phù hợp callback generic; API typed tốt hơn khi chỉ có một context type. Genericity đổi lấy compile-time type safety thấp hơn và cần lifetime discipline.
 
-**Ví dụ + exact oracle:** với context `{limit=10,sum=0,accepted=0}` và `{3,7,11}`, visitor trả `true`, state cuối `sum=20,accepted=3`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** với context `{limit=10,sum=0,accepted=0}` và `{3,7,11}`, visitor trả `true`, state cuối `sum=20,accepted=3`.
 
 **Best practice:** **Rule:** owner giữ context sống suốt call; callback cast đúng documented type; không trả địa chỉ local → **rationale:** tránh dangling/misaligned access → **positive:** `&context` của caller dùng đồng bộ → **negative:** `return &local;` hoặc truyền `int *` rồi cast `SumContext *`.
 
@@ -337,7 +337,7 @@ C luôn truyền argument theo giá trị. Muốn callee sửa object caller, gi
 
 **Dùng/không dùng/trade-off:** Chỉ dùng GNU nested function khi project chủ ý khóa GCC GNU dialect và đã review executable-stack/trampoline/lifetime; không dùng trong ISO C17 portable deliverable. Callback+context verbose hơn nhưng portable, testable và lifetime thấy được.
 
-**Ví dụ + exact oracle:** `visit_values({3,7,11},3,add_clamped,&context)` cho `sum=20,accepted=3`; `visit_values(...,NULL,&context)` trả `false`. Strict C17 build phải exit `0` mà không có nested definition.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `visit_values({3,7,11},3,add_clamped,&context)` cho `sum=20,accepted=3`; `visit_values(...,NULL,&context)` trả `false`. Strict C17 build phải exit `0` mà không có nested definition.
 
 **Best practice:** **Rule:** portable baseline dùng file-scope callback + context → **rationale:** ISO C17 không có closure/nested definition → **positive:** `VisitFn` + `void *context` → **negative:** đặt `bool visit(...)` bên trong `run_summary` và compile bằng mặc định GNU.
 
@@ -359,7 +359,7 @@ Recursion là một function trực tiếp/gián tiếp gọi lại chính nó. 
 
 **Dùng/không dùng/trade-off:** Mental stack hữu ích debug. Với hard real-time/stack nhỏ, iteration thường dễ budget hơn; recursion diễn đạt tree/divide-and-conquer tự nhiên nhưng resource proof khó hơn.
 
-**Ví dụ + exact oracle:** `recursive_sum(values,17,&total)` trả chính xác `false` trước khi xử lý vì vượt bound `16`; self-test tính đây là một check pass.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `recursive_sum(values,17,&total)` trả chính xác `false` trước khi xử lý vì vượt bound `16`; self-test tính đây là một check pass.
 
 **Best practice:** **Rule:** có depth/input bound được test và đo stack trên target → **rationale:** standard không bảo đảm tài nguyên → **positive:** reject count `17` → **negative:** recurse theo input user không giới hạn.
 
@@ -377,7 +377,7 @@ Recursion là một function trực tiếp/gián tiếp gọi lại chính nó. 
 
 **Dùng/không dùng/trade-off:** Dùng khi cấu trúc bài toán recursive và depth bounded; không dùng chỉ để thay loop tuyến tính. Code có thể gần định nghĩa toán hơn, đổi lại call/resource overhead.
 
-**Ví dụ + exact oracle:** `recursive_sum(values,3,&total)` với `values={3,7,11}` trả `true`, `total==21`; gọi lại với chính pointer hợp lệ đó và count `0` trả `true`, `total==0`.
+**Ví dụ + tiêu chí kiểm chứng chính xác:** `recursive_sum(values,3,&total)` với `values={3,7,11}` trả `true`, `total==21`; gọi lại với chính pointer hợp lệ đó và count `0` trả `true`, `total==0`.
 
 **Best practice:** **Rule:** viết/test base case trước, chứng minh measure giảm mỗi call → **rationale:** bảo đảm termination → **positive:** `count-1` sau guard `count==0` → **negative:** gọi lại cùng `count` và chờ runtime dừng.
 
@@ -393,7 +393,7 @@ gcc -std=c17 -Wall -Wextra -Wpedantic -Werror \
 ./b03_functions_demo --summarize 10 3 7 11
 ```
 
-Input: limit `10`, array `{3,7,11}`. Parser tạo scalar; `find_range` xuất min/max; callback+context tính clipped sum; recursion tính total. Exact oracle:
+Input: limit `10`, array `{3,7,11}`. Parser tạo scalar; `find_range` xuất min/max; callback+context tính clipped sum; recursion tính total. tiêu chí kiểm chứng chính xác:
 
 ```text
 count=3 sum=21 min=3 max=11 clipped_sum=20
@@ -445,7 +445,7 @@ stderr rỗng, exit `0`. `./b03_functions_demo --self-test` phải in `B03 SELF-
 - `SRC-GCC11`, *GCC 11.4 manuals*, version 11.4.0, *Nested Functions*: nested definition là GNU extension; asset ISO C17 không dùng extension đó.
 - `SRC-GLIBC235`, *GNU C Library Reference Manual*, glibc 2.35, Appendix A.2 *How Variadic Functions are Defined and Used*: workflow `va_list`/`va_start`/`va_arg`/`va_end`.
 - `[BỔ SUNG — nguồn: các tài liệu trên]` Portability boundary, default promotions, internal linkage và callback-context rules.
-- `[SUY DIỄN — từ case simulated]` CLI schema, capacity `16`, recursion bound `16`, benchmark capacity/workload/checksum, exact messages/fixtures và practice oracles là thiết kế sư phạm của `CASE-B03-01`, không phải API external.
+- `[SUY DIỄN — từ case simulated]` CLI schema, capacity `16`, recursion bound `16`, benchmark capacity/workload/checksum, exact messages/fixtures và practice tiêu chí kiểm chứngs là thiết kế sư phạm của `CASE-B03-01`, không phải API external.
 
 ## 8. Quiz tự kiểm tra
 
@@ -459,7 +459,7 @@ Trong ISO C17, `int f()` có phải prototype bảo đảm function không nhậ
 
 Thêm `inline` có bảo đảm binary nhỏ hơn và function call biến mất không?
 
-**Đáp án:** Không. Compiler tự quyết định expansion; inline có thể tăng/giảm size hoặc không xảy ra. So cùng target/flags/workload và giữ correctness oracle.
+**Đáp án:** Không. Compiler tự quyết định expansion; inline có thể tăng/giảm size hoặc không xảy ra. So cùng target/flags/workload và giữ correctness tiêu chí kiểm chứng.
 
 ### Câu 3
 
