@@ -44,6 +44,6 @@ Calculates the average.<br>
 *print_summary()*<br>
 Prints the result.<br>
 
-**Error handling**
+**Error handling**<br>
 If the input is invalid, the program prints an error message to stderr and returns exit code 2.
 
