@@ -1,0 +1,64 @@
+EVIDENCE ASSIGNMENT B00
+1. Normal input
+
+Command:
+./stats 3 -5 150
+
+stdout:
+OK count=3 min=-5 max=150 mean=49.33
+
+stderr:
+(no output)
+
+Exit code:
+0
+
+Result: PASS
+
+2. Invalid input
+
+Command:
+./stats 12x
+
+stdout:
+(no output)
+
+stderr:
+ERROR invalid input
+
+Exit code:
+2
+
+Result: PASS
+
+3. Boundary - 1 value
+
+Command:
+./stats 10
+
+stdout:
+OK count=1 min=10 max=10 mean=10.00
+
+stderr:
+(no output)
+
+Exit code:
+0
+
+Result: PASS
+
+4. Boundary - 12 values
+
+Command:
+./stats 1 2 3 4 5 6 7 8 9 10 11 12
+
+stdout:
+OK count=12 min=1 max=12 mean=6.50
+
+stderr:
+(no output)
+
+Exit code:
+0
+
+Result: PASS
