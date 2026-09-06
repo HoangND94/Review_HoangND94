@@ -1,0 +1,90 @@
+EVIDENCE ASSIGNMENT B01
+
+1. Valid temperature payload
+
+   Command:
+    ./assignment_b01 100 ACTIVE 5 temp 25
+
+   stdout:
+    record id=100 state=ACTIVE flags=5 kind=TEMP_C value=25
+
+   stderr:
+     (no output)
+
+   Exit code:
+     0
+
+   Result: PASS
+
+2. Valid RPM payload
+
+   Command:
+     ./assignment_b01 101 INIT 255 rpm 3200
+
+   stdout:
+     record id=101 state=INIT flags=255 kind=RPM value=3200
+
+   stderr:
+    (no output)
+
+   Exit code:
+    0
+
+   Result: PASS
+
+3. Invalid state
+
+   Command:
+     ./assignment_b01 100 RUNNING 5 temp 25
+
+   stdout:
+    (no output)
+
+   stderr:
+     ERROR invalid state
+
+   Exit code:
+    2
+
+   Result: PASS
+
+4. Invalid flags
+
+   Command:
+    ./assignment_b01 100 ACTIVE 256 temp 25
+
+   stdout:
+    (no output)
+
+   stderr:
+     ERROR invalid flags
+
+   Exit code:
+    2
+
+   Result: PASS
+
+5. Invalid payload type
+
+   Command:
+    ./assignment_b01 100 ACTIVE 5 voltage 12
+
+   stdout:
+     (no output)
+
+   stderr:
+    ERROR invalid payload type
+
+   Exit code:
+    2
+
+   Result: PASS
+
+6. Strict build
+
+   Command:
+    gcc -std=c17 -Wall -Wextra -Wpedantic -Werror assignment_b01.c -o assignment_b01
+
+   Result: PASS
+
+   Compiler warnings: (no output)
